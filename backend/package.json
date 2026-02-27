@@ -1,0 +1,41 @@
+{
+  "name": "rumaan_backend",
+  "version": "1.0.1",
+  "license": "Wrapbootstrap",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "admin-dev": "nodemon app.js "
+  },
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.893.0",
+    "@faker-js/faker": "^9.6.0",       
+    "async": "^3.2.6",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "compression": "^1.8.1",
+    "cookie": "^1.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "country-data": "^0.0.31",
+    "dotenv": "^17.2.1",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mime-types": "^3.0.1",
+    "mongoose": "^8.16.5",
+    "mongoose-sequence": "^6.0.1",
+    "multer": "^2.0.2",
+    "nanoid": "^5.1.6",
+    "nodemon": "^3.1.10",
+    "react-hot-toast": "^2.6.0",
+    "redis": "^5.6.1",
+    "sharp": "^0.34.4",
+    "socket.io": "^4.8.1",
+    "twilio": "^5.8.0"
+  }
+}
