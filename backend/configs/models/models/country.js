@@ -11,6 +11,6 @@ const countrySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-countrySchema.index({ iso_code: 1 });
+// countrySchema.index({ iso_code: 1 });
 
 export default mongoose.model("Country", countrySchema);

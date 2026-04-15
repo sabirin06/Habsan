@@ -11,6 +11,8 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { createClient } from "redis";
 import Admin from "./admin/routes/admin.js";
+import AdminSettings from "./admin/routes/settings.js";
+import UserRoutes from "./users/routes/user.js";
 
 function parallel(middlewares) {
   return (req, res, next) => {
@@ -122,5 +124,7 @@ export default function () {
   app.engine("html", ejs.renderFile);
   app.set("view engine", "html");
   Admin(app);
+  AdminSettings(app);
+  UserRoutes(app);
   return app;
 }

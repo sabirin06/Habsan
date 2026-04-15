@@ -55,9 +55,9 @@ const adminSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-adminSchema.index({ email: 1 });
-adminSchema.index({ username: 1 });
-adminSchema.index({ role: 1 });
-adminSchema.index({ country_id: 1 });
+// adminSchema.index({ email: 1 });
+// adminSchema.index({ username: 1 });
+// adminSchema.index({ role: 1 });
+// adminSchema.index({ country_id: 1 });
 
 export default mongoose.model("Admin", adminSchema);
