@@ -4,13 +4,14 @@
   "license": "Wrapbootstrap",
   "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "admin-dev": "nodemon app.js "
+    "start": "nodemon app.js",
+    "dev": "nodemon app.js",
+    "start:prod": "node app.js"
   },
   "private": true,
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
-    "@faker-js/faker": "^9.6.0",       
+    "@faker-js/faker": "^9.6.0",
     "async": "^3.2.6",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
