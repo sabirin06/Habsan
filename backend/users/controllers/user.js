@@ -1,16 +1,52 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import User from "../../configs/models/models/users.js";
+
+const RESET_OTP_EXPIRY_MS = 5 * 60 * 1000;
+const MAX_RESET_OTP_ATTEMPTS = 5;
+
+const validate_password_strength = (password) => {
+  const password_regex = {
+    min_length: /.{8,}/,
+    has_upper_case: /[A-Z]/,
+    has_lower_case: /[a-z]/,
+    has_number: /[0-9]/,
+    has_symbol: /[^A-Za-z0-9]/,
+  };
+
+  if (!password_regex.min_length.test(password)) {
+    return "Password must be at least 8 characters long";
+  }
+
+  if (!password_regex.has_upper_case.test(password)) {
+    return "Password must include at least one uppercase letter";
+  }
+
+  if (!password_regex.has_lower_case.test(password)) {
+    return "Password must include at least one lowercase letter";
+  }
+
+  if (!password_regex.has_number.test(password)) {
+    return "Password must include at least one number";
+  }
+
+  if (!password_regex.has_symbol.test(password)) {
+    return "Password must include at least one special character";
+  }
+
+  return null;
+};
 
 export const register_user = async (req, res) => {
   try {
-    const first_name = req.body.first_name ?? req.body.firstName;
-    const last_name = req.body.last_name ?? req.body.lastName;
+    const first_name = req.body.first_name;
+    const last_name = req.body.last_name;
     const email = req.body.email;
     const phone = req.body.phone;
     const password = req.body.password;
-    const accept_terms = req.body.accept_terms ?? req.body.acceptTerms;
+    const accept_terms = req.body.accept_terms;
 
     if (!first_name || !email || !phone || !password) {
       return res.status(400).json({
@@ -39,46 +75,11 @@ export const register_user = async (req, res) => {
       });
     }
 
-    const password_regex = {
-      min_length: /.{8,}/,
-      has_upper_case: /[A-Z]/,
-      has_lower_case: /[a-z]/,
-      has_number: /[0-9]/,
-      has_symbol: /[^A-Za-z0-9]/,
-    };
-
-    if (!password_regex.min_length.test(password)) {
+    const password_validation_error = validate_password_strength(password);
+    if (password_validation_error) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters long",
-      });
-    }
-
-    if (!password_regex.has_upper_case.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must include at least one uppercase letter",
-      });
-    }
-
-    if (!password_regex.has_lower_case.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must include at least one lowercase letter",
-      });
-    }
-
-    if (!password_regex.has_number.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must include at least one number",
-      });
-    }
-
-    if (!password_regex.has_symbol.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must include at least one special character",
+        message: password_validation_error,
       });
     }
 
@@ -348,37 +349,149 @@ export const logout_user = async (req, res) => {
   }
 };
 
-export const forgot_password = async (req, res) => {
+export const send_reset_otp = async (req, res) => {
   try {
-    const email = req.body.email;
-    const email_value = email ? String(email).trim().toLowerCase() : "";
+    const phone = req.body.phone;
+    const phone_value = phone ? String(phone).trim() : "";
 
-    if (!email_value) {
+    if (!phone_value) {
       return res.status(400).json({
         success: false,
-        message: "Unable to send reset email",
+        message: "phone is required",
       });
     }
 
-    const user = await User.findOne({ email: email_value, is_deleted: false });
+    const user = await User.findOne({ phone: phone_value, is_deleted: false });
 
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
-        message: "Unable to send reset email",
+        message: "User not found",
       });
     }
+
+    const otp = String(randomInt(100000, 1000000));
+
+    user.reset_otp = otp;
+    user.reset_otp_expires_at = new Date(Date.now() + RESET_OTP_EXPIRY_MS);
+    user.reset_otp_attempts = 0;
+    await user.save();
+
+    // Mock SMS sender
+    console.log(`[MOCK_SMS] Password reset OTP for ${phone_value}: ${otp}`);
 
     return res.status(200).json({
       success: true,
-      message: "Password reset instructions sent",
+      message: "OTP sent successfully",
+      data: {
+        expires_in_seconds: RESET_OTP_EXPIRY_MS / 1000,
+      },
+    });
+  } catch (error) {
+    console.error("send_reset_otp error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send OTP",
+    });
+  }
+};
+
+export const reset_password = async (req, res) => {
+  try {
+    const phone = req.body.phone;
+    const otp = req.body.otp;
+    const new_password = req.body.newPassword;
+    const confirm_password = req.body.confirmPassword;
+
+    const phone_value = phone ? String(phone).trim() : "";
+    const otp_value = otp ? String(otp).trim() : "";
+
+    if (!phone_value || !otp_value || !new_password || !confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: "phone, otp, newPassword and confirmPassword are required",
+      });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: "newPassword and confirmPassword do not match",
+      });
+    }
+
+    const password_validation_error = validate_password_strength(new_password);
+    if (password_validation_error) {
+      return res.status(400).json({
+        success: false,
+        message: password_validation_error,
+      });
+    }
+
+    const user = await User.findOne({ phone: phone_value, is_deleted: false });
+
+    if (!user || !user.reset_otp || !user.reset_otp_expires_at) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    const current_attempts = Number(user.reset_otp_attempts || 0);
+    if (current_attempts >= MAX_RESET_OTP_ATTEMPTS) {
+      return res.status(429).json({
+        success: false,
+        message: "OTP attempt limit exceeded, request a new OTP",
+      });
+    }
+
+    if (new Date(user.reset_otp_expires_at).getTime() < Date.now()) {
+      user.reset_otp = null;
+      user.reset_otp_expires_at = null;
+      user.reset_otp_attempts = 0;
+      await user.save();
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    const is_otp_valid = otp_value === String(user.reset_otp);
+
+    if (!is_otp_valid) {
+      user.reset_otp_attempts = current_attempts + 1;
+      await user.save();
+
+      if (user.reset_otp_attempts >= MAX_RESET_OTP_ATTEMPTS) {
+        return res.status(429).json({
+          success: false,
+          message: "OTP attempt limit exceeded, request a new OTP",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    user.password = await bcrypt.hash(new_password, 10);
+    user.reset_otp = null;
+    user.reset_otp_expires_at = null;
+    user.reset_otp_attempts = 0;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successful",
       data: {},
     });
   } catch (error) {
-    console.error("forgot_password error:", error);
+    console.error("reset_password error:", error);
     return res.status(500).json({
       success: false,
-      message: "Unable to send reset email",
+      message: "Failed to reset password",
     });
   }
 };

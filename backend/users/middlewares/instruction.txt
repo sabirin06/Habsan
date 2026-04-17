@@ -1,0 +1,164 @@
+User Auth APIs - Request and Expected Response
+
+Base routes are registered in users/routes/user.js.
+
+1) POST /api/auth/register
+Request body (snake_case):
+{
+	"first_name": "John",
+	"last_name": "Doe",
+	"email": "john@example.com",
+	"phone": "9999999999",
+	"password": "Strong@123",
+	"accept_terms": true
+}
+
+Success (201):
+{
+	"success": true,
+	"message": "Account created successfully",
+	"data": {
+		"token": "<jwt>",
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999"
+		}
+	}
+}
+
+Common errors:
+- 400: required fields missing
+- 400: invalid email
+- 400: weak password
+- 400: accept_terms false
+- 409: email or phone already exists
+- 500: Failed to register user
+
+
+2) POST /api/auth/login
+Request body:
+{
+	"email": "john@example.com",
+	"password": "Strong@123"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Login successful",
+	"data": {
+		"token": "<jwt>",
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999",
+			"userType": "customer"
+		}
+	}
+}
+
+Common errors:
+- 400: email and password are required
+- 401: Invalid email or password
+- 403: User is blocked
+- 500: Failed to login user
+
+
+3) POST /api/auth/send-reset-otp
+Request body:
+{
+	"phone": "9999999999"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "OTP sent successfully",
+	"data": {
+		"expires_in_seconds": 300
+	}
+}
+
+Notes:
+- OTP expiry is 5 minutes.
+- OTP send is mocked by console log.
+
+Common errors:
+- 400: phone is required
+- 404: User not found
+- 500: Failed to send OTP
+
+
+4) POST /api/auth/reset-password
+Request body:
+{
+	"phone": "9999999999",
+	"otp": "123456",
+	"newPassword": "New@12345",
+	"confirmPassword": "New@12345"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Password reset successful",
+	"data": {}
+}
+
+Validation and behavior:
+- newPassword must match confirmPassword
+- password strength validation is enforced
+- OTP must match reset_otp and not be expired
+- max OTP attempts: 5
+- on success, reset_otp, reset_otp_expires_at, reset_otp_attempts are cleared
+
+Common errors:
+- 400: required fields missing
+- 400: passwords do not match
+- 400: weak password
+- 400: Invalid or expired OTP
+- 429: OTP attempt limit exceeded, request a new OTP
+- 500: Failed to reset password
+
+
+5) GET /api/auth/me
+Auth:
+- Requires verifyUserToken middleware (Bearer token or auth cookie handled by middleware).
+
+Success (200):
+{
+	"success": true,
+	"message": "Session loaded",
+	"data": {
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999"
+		}
+	}
+}
+
+Common errors:
+- 401: Unauthenticated
+
+
+6) POST /api/auth/logout
+Request body:
+- none
+
+Success (200):
+{
+	"success": true,
+	"message": "Logged out successfully",
+	"data": {}
+}
+
+Common errors:
+- 500: Logout failed

@@ -47,6 +47,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    reset_otp: String,
+    reset_otp_expires_at: Date,
+    reset_otp_attempts: {
+      type: Number,
+      default: 0,
+    },
 
     last_login_at: Date,
     last_login_ip: String,
