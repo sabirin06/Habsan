@@ -19,28 +19,22 @@ import { adminProfileStorage } from "../middlewares/upload.js";
 const uploadAdmin = multer({ storage: adminProfileStorage });
 import { verifyAdminToken } from "../middlewares/auth.js";
 export default (app) => {
-  app.route("/admin/create_admin").post(
-    verifyAdminToken,
-    uploadAdmin.single("profile_image"),
-    create_admin,
-  );
+  app
+    .route("/admin/create_admin")
+    .post(verifyAdminToken, uploadAdmin.single("profile_image"), create_admin);
 
   app.post("/admin/bootstrap", create_first_admin);
 
   app.route("/admin/get_all_admins").post(get_all_admins);
   app.route("/admin/signin").post(signin_admin);
-  app.route("/admin/signout").post( signout_admin);
+  app.route("/admin/signout").post(signout_admin);
   app.route("/admin/verify_auth").get(verify_auth);
   app.route("/admin/reset_lockout").post(reset_admin_lockout);
-  app
-    .route("/admin/get_managed_by_admins")
-    .post( get_managed_by_admins);
+  app.route("/admin/get_managed_by_admins").post(get_managed_by_admins);
   app
     .route("/admin/edit_admin")
     .post(uploadAdmin.single("profile_image"), edit_admin);
   app.route("/admin/get_current_admin").get(get_current_admin);
-  app
-    .route("/admin/change_admin_status")
-    .post(change_admin_status);
+  app.route("/admin/change_admin_status").post(change_admin_status);
   app.route("/admin/generate_pin").post(generate_admin_pin);
 };

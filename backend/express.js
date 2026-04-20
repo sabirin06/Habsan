@@ -11,7 +11,12 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { createClient } from "redis";
 import Admin from "./admin/routes/admin.js";
+import AdminVender from "./admin/routes/vender.js";
 import AdminSettings from "./admin/routes/settings.js";
+import AdminExperiences from "./admin/routes/expriences.js";
+import AdminStay from "./admin/routes/stay.js";
+import ExperiencePanelRoutes from "./Exprience/routes/expriences.js";
+import StayPanelRoutes from "./Stay/routes/stay.js";
 import UserRoutes from "./users/routes/user.js";
 
 function parallel(middlewares) {
@@ -124,7 +129,12 @@ export default function () {
   app.engine("html", ejs.renderFile);
   app.set("view engine", "html");
   Admin(app);
+  AdminVender(app);
   AdminSettings(app);
+  AdminExperiences(app);
+  AdminStay(app);
+  ExperiencePanelRoutes(app);
+  StayPanelRoutes(app);
   UserRoutes(app);
   return app;
 }

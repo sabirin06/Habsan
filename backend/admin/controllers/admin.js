@@ -5,7 +5,6 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import Twilio from "twilio";
 
-
 export const create_first_admin = async (req, res) => {
   try {
     const adminExists = await Admin.findOne();
@@ -37,8 +36,6 @@ export const create_first_admin = async (req, res) => {
     });
   }
 };
-
-
 
 const getAuthCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
@@ -74,7 +71,6 @@ export const create_admin = async (req, res) => {
       country_id,
       city_id,
     } = req.body;
-
 
     const emailToCheck = email?.trim().toLowerCase();
     const usernameToCheck = username?.trim().toLowerCase();
@@ -288,7 +284,7 @@ export const edit_admin = async (req, res) => {
     const updatedAdmin = await Admin.findByIdAndUpdate(
       admin_id,
       { $set: updateData },
-      { new: true }
+      { new: true },
     );
 
     return res.status(200).json({
@@ -585,7 +581,7 @@ export const signin_admin = async (req, res) => {
       const currentTime = new Date();
       const loginAtTime = new Date(admin.login_at);
       const timeDiffInMinutes = Math.floor(
-        (currentTime - loginAtTime) / (1000 * 60)
+        (currentTime - loginAtTime) / (1000 * 60),
       );
 
       if (timeDiffInMinutes < lockoutTime) {
@@ -608,7 +604,6 @@ export const signin_admin = async (req, res) => {
       admin.login_attempts = loginAttempts + 1;
       admin.login_at = new Date();
       await admin.save();
-
 
       return res.json({
         success: false,
@@ -633,7 +628,7 @@ export const signin_admin = async (req, res) => {
         role_id: admin.role_id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "24h" },
     );
 
     res.cookie("auth_token", token, {
@@ -703,7 +698,7 @@ export const get_managed_by_admins = async (req, res) => {
   const { type } = req.body;
   try {
     const admins = await Admin.find({ type: type - 1, status: 1 }).select(
-      "username _id"
+      "username _id",
     );
     return res.status(200).json({ success: true, admins });
   } catch (error) {

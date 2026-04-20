@@ -1,0 +1,565 @@
+................. User Auth APIs ...........................
+
+1) POST /api/auth/register
+Request body (snake_case):
+{
+	"first_name": "John",
+	"last_name": "Doe",
+	"email": "john@example.com",
+	"phone": "9999999999",
+	"password": "Strong@123",
+	"accept_terms": true
+}
+
+Success (201):
+{
+	"success": true,
+	"message": "Account created successfully",
+	"data": {
+		"token": "<jwt>",
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999"
+		}
+	}
+}
+
+Common errors:
+- 400: required fields missing
+- 400: invalid email
+- 400: weak password
+- 400: accept_terms false
+- 409: email or phone already exists
+- 500: Failed to register user
+
+
+2) POST /api/auth/login
+Request body:
+{
+	"email": "john@example.com",
+	"password": "Strong@123"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Login successful",
+	"data": {
+		"token": "<jwt>",
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999",
+			"userType": "customer"
+		}
+	}
+}
+
+Common errors:
+- 400: email and password are required
+- 401: Invalid email or password
+- 403: User is blocked
+- 500: Failed to login user
+
+
+3) POST /api/auth/send-reset-otp
+Request body:
+{
+	"phone": "9999999999"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "OTP sent successfully",
+	"data": {
+		"expires_in_seconds": 300
+	}
+}
+
+Notes:
+- OTP expiry is 5 minutes.
+- OTP send is mocked by console log.
+
+Common errors:
+- 400: phone is required
+- 404: User not found
+- 500: Failed to send OTP
+
+
+4) POST /api/auth/reset-password
+Request body:
+{
+	"phone": "9999999999",
+	"otp": "123456",
+	"newPassword": "New@12345",
+	"confirmPassword": "New@12345"
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Password reset successful",
+	"data": {}
+}
+
+Validation and behavior:
+- newPassword must match confirmPassword
+- password strength validation is enforced
+- OTP must match reset_otp and not be expired
+- max OTP attempts: 5
+- on success, reset_otp, reset_otp_expires_at, reset_otp_attempts are cleared
+
+Common errors:
+- 400: required fields missing
+- 400: passwords do not match
+- 400: weak password
+- 400: Invalid or expired OTP
+- 429: OTP attempt limit exceeded, request a new OTP
+- 500: Failed to reset password
+
+
+5) GET /api/auth/me
+Auth:
+- Requires verifyUserToken middleware (Bearer token or auth cookie handled by middleware).
+
+Success (200):
+{
+	"success": true,
+	"message": "Session loaded",
+	"data": {
+		"user": {
+			"id": "<user_id>",
+			"firstName": "John",
+			"lastName": "Doe",
+			"email": "john@example.com",
+			"phone": "9999999999"
+		}
+	}
+}
+
+Common errors:
+- 401: Unauthenticated
+
+
+6) POST /api/auth/logout
+Request body:
+- none
+
+Success (200):
+{
+	"success": true,
+	"message": "Logged out successfully",
+	"data": {}
+}
+
+Common errors:
+- 500: Logout failed
+
+
+.......................Admin Stay..............................
+
+1) POST /api/stays
+Description:
+- Search stays with filters and pagination.
+
+Request body (all fields optional):
+{
+	"type": "hotel",
+	"destination": "Mogadishu",
+	"checkIn": "YYYY-MM-DD",
+	"checkOut": "YYYY-MM-DD",
+	"adults": 2,
+	"children": 1,
+	"rooms": 1,
+	"entirePlace": false,
+	"sort": "recommended",
+	"page": 1,
+	"limit": 18,
+	"priceMin": 0,
+	"priceMax": 1200,
+	"guestRatingMin": 0,
+	"amenities": ["wifi"],
+	"locationRadiusKm": 25,
+	"starRatings": [4, 5],
+	"breakfastIncluded": true,
+	"freeCancellation": true,
+	"hotelChains": ["string"],
+	"bedroomsMin": 2,
+	"kitchen": true,
+	"washingMachine": true,
+	"longStayDiscount": true,
+	"visitorLat": 2.0469,
+	"visitorLng": 45.3182
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Stays fetched",
+	"data": {
+		"items": [
+			{
+				"id": "string",
+				"type": "hotel",
+				"name": "string",
+				"location": {
+					"city": "string",
+					"country": "string",
+					"lat": 0,
+					"lng": 0
+				},
+				"images": [
+					{ "url": "string", "alt": "string" }
+				],
+				"pricePerNight": 0,
+				"guestRating": 0,
+				"reviewsCount": 0,
+				"amenities": ["wifi"],
+				"distanceKm": 0
+			}
+		],
+		"pagination": {
+			"page": 1,
+			"limit": 18,
+			"total": 0,
+			"hasMore": true
+		}
+	}
+}
+
+Error (500):
+{
+	"success": false,
+	"message": "Unable to fetch stays"
+}
+
+
+2) POST /api/stays/:stayId
+Description:
+- Get stay details by stay id.
+
+Request body (optional pricing context):
+{
+	"checkIn": "YYYY-MM-DD",
+	"checkOut": "YYYY-MM-DD",
+	"adults": 2,
+	"children": 1,
+	"rooms": 1,
+	"entirePlace": false
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Stay details fetched",
+	"data": {
+		"stay": {
+			"id": "string",
+			"type": "hotel",
+			"name": "string",
+			"location": {
+				"city": "string",
+				"country": "string",
+				"address": "string",
+				"lat": 0,
+				"lng": 0
+			},
+			"images": [],
+			"amenities": ["wifi"],
+			"reviewsCount": 0,
+			"guestRating": 0,
+			"policies": {},
+			"rooms": [],
+			"host": {},
+			"houseRules": ["string"]
+		},
+		"pricing": {
+			"nights": 0,
+			"pricePerNight": 0,
+			"subtotal": 0,
+			"fees": 0,
+			"discount": 0,
+			"total": 0,
+			"currency": "USD"
+		}
+	}
+}
+
+Common errors:
+- 404: Stay not found
+- 500: Unable to fetch stay details
+
+
+.......................stay portal..............................
+
+1) POST /api/stays/create
+Description:
+- Create one stay/property from portal side.
+
+Required request body fields:
+{
+	"vendor_id": "ObjectId",
+	"country_id": "ObjectId",
+	"city_id": "ObjectId",
+	"type": "hotel|apartment|house",
+	"name": "string or provide title"
+}
+
+Full body example:
+{
+	"vendor_id": "string",
+	"country_id": "string",
+	"city_id": "string",
+	"type": "hotel",
+	"name": "Ocean View Hotel",
+	"title": "Ocean View Hotel",
+	"description": "string",
+	"address": "string",
+	"city_name": "Mogadishu",
+	"country_name": "Somalia",
+	"lat": 2.0469,
+	"lng": 45.3182,
+	"price_per_night": 120,
+	"currency": "USD",
+	"max_guests": 4,
+	"rooms_count": 20,
+	"bedrooms": 1,
+	"star_rating": 4,
+	"hotel_chain": "string",
+	"breakfast_included": true,
+	"free_cancellation": true,
+	"long_stay_discount": false,
+	"entire_place": false,
+	"kitchen": false,
+	"washing_machine": true,
+	"amenities": ["wifi", "ac"],
+	"images": ["url1", "url2"],
+	"rooms": [],
+	"policies": {},
+	"host": {},
+	"house_rules": ["No smoking"],
+	"status": "active"
+}
+
+Success (201):
+{
+	"success": true,
+	"message": "Stay created successfully",
+	"data": {
+		"stay": {
+			"id": "string",
+			"type": "hotel",
+			"name": "string",
+			"city": "string",
+			"country": "string",
+			"price_per_night": 0,
+			"currency": "USD",
+			"status": "active",
+			"createdAt": "date"
+		}
+	}
+}
+
+Common errors:
+- 400: missing required fields
+- 400: Invalid vendor_id/country_id/city_id
+- 400: invalid type
+- 400: name or title is required
+- 500: Failed to create stay
+
+
+.......................Admin exprience..............................
+
+1) POST /api/experiences
+Description:
+- Search experiences with filters and pagination.
+
+Request body (all fields optional):
+{
+	"destination": "Mogadishu",
+	"date": "YYYY-MM-DD",
+	"category": "cultural",
+	"adults": 2,
+	"children": 1,
+	"sort": "recommended",
+	"page": 1,
+	"limit": 18,
+	"priceMin": 0,
+	"priceMax": 2000,
+	"duration": ["1_3"],
+	"locations": ["string"],
+	"categories": ["cultural"],
+	"groupType": ["private"],
+	"groupSizeMax": 10,
+	"languages": ["English"],
+	"operators": ["string"],
+	"ratingMin": 4
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Experiences fetched",
+	"data": {
+		"items": [
+			{
+				"id": "string",
+				"title": "string",
+				"category": "cultural",
+				"location": {
+					"city": "string",
+					"country": "string"
+				},
+				"operator": {
+					"id": "string",
+					"name": "string",
+					"verified": true
+				},
+				"durationLabel": "string",
+				"groupType": "private",
+				"groupSizeMax": 10,
+				"languages": ["string"],
+				"rating": {
+					"score": 0,
+					"reviewsCount": 0
+				},
+				"pricePerPerson": 0,
+				"currency": "USD",
+				"images": []
+			}
+		],
+		"pagination": {
+			"page": 1,
+			"limit": 18,
+			"total": 0,
+			"hasMore": true
+		}
+	}
+}
+
+Error (500):
+{
+	"success": false,
+	"message": "Unable to fetch experiences"
+}
+
+
+2) POST /api/experiences/:experienceId
+Description:
+- Get experience details by experience id.
+
+Request body (optional pricing context):
+{
+	"date": "YYYY-MM-DD",
+	"adults": 2,
+	"children": 1
+}
+
+Success (200):
+{
+	"success": true,
+	"message": "Experience details fetched",
+	"data": {
+		"experience": {
+			"id": "string",
+			"title": "string",
+			"location": {},
+			"operator": {},
+			"overview": {},
+			"included": ["string"],
+			"excluded": ["string"],
+			"itinerary": [],
+			"cancellationPolicy": "string",
+			"meetingPoint": {
+				"label": "string"
+			}
+		},
+		"pricing": {
+			"pricePerPerson": 0,
+			"travelers": 0,
+			"fees": 0,
+			"total": 0,
+			"currency": "USD"
+		},
+		"relatedStays": []
+	}
+}
+
+Common errors:
+- 404: Experience not found
+- 500: Unable to fetch experience details
+
+
+.......................exprience portal..............................
+
+1) POST /api/experiences/create
+Description:
+- Create one experience from portal side.
+
+Required request body fields:
+{
+	"vendor_id": "ObjectId",
+	"country_id": "ObjectId",
+	"city_id": "ObjectId",
+	"title": "string",
+	"price": 0
+}
+
+Full body example:
+{
+	"vendor_id": "string",
+	"country_id": "string",
+	"city_id": "string",
+	"title": "Mogadishu Cultural City Tour",
+	"price": 55,
+	"category": "cultural",
+	"description": "string",
+	"city_name": "Mogadishu",
+	"country_name": "Somalia",
+	"location_name": "Old Town",
+	"duration_hours": 3,
+	"currency": "USD",
+	"max_people": 12,
+	"group_type": "shared",
+	"group_size_max": 12,
+	"languages": ["English", "Somali"],
+	"operator_name": "string",
+	"operator_verified": true,
+	"images": ["url1", "url2"],
+	"included": ["Guide"],
+	"excluded": ["Meals"],
+	"itinerary": [],
+	"cancellation_policy": "string",
+	"meeting_point_label": "string",
+	"status": "active"
+}
+
+Success (201):
+{
+	"success": true,
+	"message": "Experience created successfully",
+	"data": {
+		"experience": {
+			"id": "string",
+			"title": "string",
+			"category": "string",
+			"price": 0,
+			"currency": "USD",
+			"status": "active",
+			"createdAt": "date"
+		}
+	}
+}
+
+Common errors:
+- 400: missing required fields
+- 400: Invalid vendor_id/country_id/city_id
+- 400: invalid price
+- 500: Failed to create experience
+
