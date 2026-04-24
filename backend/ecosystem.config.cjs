@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "backend",
-      cwd: "/var/www/html/dheeh/backend",
+      cwd: "/var/www/html/Habsan/backend",
       script: "app.js",
       interpreter: "node",
       env: {
