@@ -7,12 +7,12 @@ module.exports = {
       interpreter: "node",
       env: {
         NODE_ENV: "production",
-        PORT: "4000"
+        PORT: "8001",
       },
       autorestart: true,
       watch: false,
       max_memory_restart: "500M",
-      time: true
-    }
-  ]
+      time: true,
+    },
+  ],
 };
