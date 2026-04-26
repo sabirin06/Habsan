@@ -35,49 +35,14 @@ export default function () {
   var app = express();
   app.use(cookieParser());
 
-  const rawAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS;
-  if (!rawAllowedOrigins) {
-    throw new Error("CORS_ALLOWED_ORIGINS is required");
-  }
-
-  const allowedOrigins = rawAllowedOrigins
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
-
-  if (!allowedOrigins.length) {
-    throw new Error(
-      "CORS_ALLOWED_ORIGINS must contain at least one comma-separated origin",
-    );
-  }
-
   app.use(
     cors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (like curl or mobile apps)
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
+      origin: true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
-
-  // OPTIONAL: Keep this only if you need to manually set headers
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header("Access-Control-Allow-Credentials", "true");
-      res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH");
-      res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-    }
-    next();
-  });
   if (process.env.NODE_ENV === "development") {
     app.use(
       session({
