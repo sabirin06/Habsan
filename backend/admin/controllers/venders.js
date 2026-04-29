@@ -17,7 +17,7 @@ export const create_vendor = async (req, res) => {
       address,
       license_number,
       commission_rate,
-    } = req.body;
+    } = req.body || {};
 
     if (
       !company_name ||
@@ -127,8 +127,9 @@ export const create_vendor = async (req, res) => {
 
 export const vendor_list = async (req, res) => {
   try {
-    const page_raw = Number(req.body.page || 1);
-    const limit_raw = Number(req.body.limit || 20);
+    const body = req.body || {};
+    const page_raw = Number(body.page || 1);
+    const limit_raw = Number(body.limit || 20);
     const page = Number.isFinite(page_raw) && page_raw > 0 ? page_raw : 1;
     const limit =
       Number.isFinite(limit_raw) && limit_raw > 0
@@ -138,32 +139,32 @@ export const vendor_list = async (req, res) => {
 
     const filter = { is_deleted: false };
 
-    if (req.body.business_type !== undefined && req.body.business_type !== "") {
-      const business_type = Number(req.body.business_type);
+    if (body.business_type !== undefined && body.business_type !== "") {
+      const business_type = Number(body.business_type);
       if (Number.isFinite(business_type)) {
         filter.business_type = business_type;
       }
     }
 
-    if (req.body.status !== undefined && req.body.status !== "") {
-      const status = Number(req.body.status);
+    if (body.status !== undefined && body.status !== "") {
+      const status = Number(body.status);
       if (Number.isFinite(status)) {
         filter.status = status;
       }
     }
 
-    if (req.body.country_id && mongoose.Types.ObjectId.isValid(req.body.country_id)) {
-      filter.country_id = new mongoose.Types.ObjectId(String(req.body.country_id));
+    if (body.country_id && mongoose.Types.ObjectId.isValid(body.country_id)) {
+      filter.country_id = new mongoose.Types.ObjectId(String(body.country_id));
     }
 
-    if (req.body.city_id && mongoose.Types.ObjectId.isValid(req.body.city_id)) {
-      filter.city_id = new mongoose.Types.ObjectId(String(req.body.city_id));
+    if (body.city_id && mongoose.Types.ObjectId.isValid(body.city_id)) {
+      filter.city_id = new mongoose.Types.ObjectId(String(body.city_id));
     }
 
     const and_filters = [];
-    if (req.body.search) {
+    if (body.search) {
       const search_regex = new RegExp(
-        String(req.body.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        String(body.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
         "i",
       );
       and_filters.push({

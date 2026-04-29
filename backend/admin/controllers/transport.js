@@ -3,8 +3,9 @@ import Car from "../../configs/models/models/car.js";
 
 export const search_transportation = async (req, res) => {
   try {
-    const page_raw = Number(req.body.page || 1);
-    const limit_raw = Number(req.body.limit || 18);
+    const body = req.body || {};
+    const page_raw = Number(body.page || 1);
+    const limit_raw = Number(body.limit || 18);
     const page = Number.isFinite(page_raw) && page_raw > 0 ? page_raw : 1;
     const limit =
       Number.isFinite(limit_raw) && limit_raw > 0
@@ -12,11 +13,11 @@ export const search_transportation = async (req, res) => {
         : 18;
     const skip = (page - 1) * limit;
 
-    const price_min_raw = Number(req.body.price_min || req.body.priceMin || 0);
-    const price_max_raw = Number(req.body.price_max || req.body.priceMax || 0);
-    const seats_min_raw = Number(req.body.seats_min || req.body.seatsMin || 0);
-    const year_min_raw = Number(req.body.year_min || req.body.yearMin || 0);
-    const year_max_raw = Number(req.body.year_max || req.body.yearMax || 0);
+    const price_min_raw = Number(body.price_min || body.priceMin || 0);
+    const price_max_raw = Number(body.price_max || body.priceMax || 0);
+    const seats_min_raw = Number(body.seats_min || body.seatsMin || 0);
+    const year_min_raw = Number(body.year_min || body.yearMin || 0);
+    const year_max_raw = Number(body.year_max || body.yearMax || 0);
 
     const price_min =
       Number.isFinite(price_min_raw) && price_min_raw >= 0 ? price_min_raw : 0;
@@ -30,56 +31,56 @@ export const search_transportation = async (req, res) => {
       Number.isFinite(year_max_raw) && year_max_raw > 0 ? year_max_raw : 0;
 
     const brands = (
-      Array.isArray(req.body.brands)
-        ? req.body.brands
-        : typeof req.body.brands === "string"
-          ? req.body.brands.split(",")
-          : req.body.brand
-            ? [req.body.brand]
+      Array.isArray(body.brands)
+        ? body.brands
+        : typeof body.brands === "string"
+          ? body.brands.split(",")
+          : body.brand
+            ? [body.brand]
             : []
     )
       .map((item) => String(item).trim())
       .filter(Boolean);
     const models = (
-      Array.isArray(req.body.models)
-        ? req.body.models
-        : typeof req.body.models === "string"
-          ? req.body.models.split(",")
-          : req.body.model
-            ? [req.body.model]
+      Array.isArray(body.models)
+        ? body.models
+        : typeof body.models === "string"
+          ? body.models.split(",")
+          : body.model
+            ? [body.model]
             : []
     )
       .map((item) => String(item).trim())
       .filter(Boolean);
     const types = (
-      Array.isArray(req.body.types)
-        ? req.body.types
-        : typeof req.body.types === "string"
-          ? req.body.types.split(",")
-          : req.body.type
-            ? [req.body.type]
+      Array.isArray(body.types)
+        ? body.types
+        : typeof body.types === "string"
+          ? body.types.split(",")
+          : body.type
+            ? [body.type]
             : []
     )
       .map((item) => String(item).trim())
       .filter(Boolean);
     const transmissions = (
-      Array.isArray(req.body.transmissions)
-        ? req.body.transmissions
-        : typeof req.body.transmissions === "string"
-          ? req.body.transmissions.split(",")
-          : req.body.transmission
-            ? [req.body.transmission]
+      Array.isArray(body.transmissions)
+        ? body.transmissions
+        : typeof body.transmissions === "string"
+          ? body.transmissions.split(",")
+          : body.transmission
+            ? [body.transmission]
             : []
     )
       .map((item) => String(item).trim().toLowerCase())
       .filter(Boolean);
     const fuel_types = (
-      Array.isArray(req.body.fuel_types)
-        ? req.body.fuel_types
-        : typeof req.body.fuel_types === "string"
-          ? req.body.fuel_types.split(",")
-          : req.body.fuel_type
-            ? [req.body.fuel_type]
+      Array.isArray(body.fuel_types)
+        ? body.fuel_types
+        : typeof body.fuel_types === "string"
+          ? body.fuel_types.split(",")
+          : body.fuel_type
+            ? [body.fuel_type]
             : []
     )
       .map((item) => Number(item))
@@ -87,33 +88,33 @@ export const search_transportation = async (req, res) => {
 
     const filter = {
       is_deleted: false,
-      status: req.body.status ? String(req.body.status).trim() : "available",
+      status: body.status ? String(body.status).trim() : "available",
     };
     const and_filters = [];
 
     if (
-      req.body.vendor_id &&
-      mongoose.Types.ObjectId.isValid(req.body.vendor_id)
+      body.vendor_id &&
+      mongoose.Types.ObjectId.isValid(body.vendor_id)
     ) {
-      filter.vendor_id = new mongoose.Types.ObjectId(String(req.body.vendor_id));
+      filter.vendor_id = new mongoose.Types.ObjectId(String(body.vendor_id));
     }
 
     if (
-      req.body.country_id &&
-      mongoose.Types.ObjectId.isValid(req.body.country_id)
+      body.country_id &&
+      mongoose.Types.ObjectId.isValid(body.country_id)
     ) {
       filter.country_id = new mongoose.Types.ObjectId(
-        String(req.body.country_id),
+        String(body.country_id),
       );
     }
 
-    if (req.body.city_id && mongoose.Types.ObjectId.isValid(req.body.city_id)) {
-      filter.city_id = new mongoose.Types.ObjectId(String(req.body.city_id));
+    if (body.city_id && mongoose.Types.ObjectId.isValid(body.city_id)) {
+      filter.city_id = new mongoose.Types.ObjectId(String(body.city_id));
     }
 
-    if (req.body.search) {
+    if (body.search) {
       const search_regex = new RegExp(
-        String(req.body.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        String(body.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
         "i",
       );
       and_filters.push({
@@ -203,7 +204,7 @@ export const search_transportation = async (req, res) => {
       if (year_max > 0) filter.year.$lte = year_max;
     }
 
-    const sort_value = String(req.body.sort || "recommended")
+    const sort_value = String(body.sort || "recommended")
       .trim()
       .toLowerCase();
     let sort_stage = { createdAt: -1 };
@@ -274,6 +275,7 @@ export const search_transportation = async (req, res) => {
 
 export const get_transportation_detail = async (req, res) => {
   try {
+    const body = req.body || {};
     const transport_id = req.params.transport_id;
 
     if (!mongoose.Types.ObjectId.isValid(transport_id)) {
@@ -295,11 +297,11 @@ export const get_transportation_detail = async (req, res) => {
       });
     }
 
-    const pickup_date = req.body.pickup_date
-      ? String(req.body.pickup_date).trim()
+    const pickup_date = body.pickup_date
+      ? String(body.pickup_date).trim()
       : "";
-    const return_date = req.body.return_date
-      ? String(req.body.return_date).trim()
+    const return_date = body.return_date
+      ? String(body.return_date).trim()
       : "";
 
     let total_days = 1;

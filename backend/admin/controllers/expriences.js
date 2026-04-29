@@ -3,8 +3,9 @@ import Experience from "../../configs/models/models/experience.js";
 
 export const search_experiences = async (req, res) => {
   try {
-    const page_raw = Number(req.body.page || 1);
-    const limit_raw = Number(req.body.limit || 18);
+    const body = req.body || {};
+    const page_raw = Number(body.page || 1);
+    const limit_raw = Number(body.limit || 18);
     const page = Number.isFinite(page_raw) && page_raw > 0 ? page_raw : 1;
     const limit =
       Number.isFinite(limit_raw) && limit_raw > 0
@@ -12,23 +13,23 @@ export const search_experiences = async (req, res) => {
         : 18;
     const skip = (page - 1) * limit;
 
-    const destination = req.body.destination
-      ? String(req.body.destination).trim()
+    const destination = body.destination
+      ? String(body.destination).trim()
       : "";
-    const category = req.body.category ? String(req.body.category).trim() : "";
+    const category = body.category ? String(body.category).trim() : "";
 
-    const adults_raw = Number(req.body.adults || 1);
-    const children_raw = Number(req.body.children || 0);
+    const adults_raw = Number(body.adults || 1);
+    const children_raw = Number(body.children || 0);
     const adults =
       Number.isFinite(adults_raw) && adults_raw >= 0 ? adults_raw : 1;
     const children =
       Number.isFinite(children_raw) && children_raw >= 0 ? children_raw : 0;
     const travelers = adults + children;
 
-    const price_min_raw = Number(req.body.priceMin || 0);
-    const price_max_raw = Number(req.body.priceMax || 0);
-    const group_size_max_raw = Number(req.body.groupSizeMax || 0);
-    const rating_min_raw = Number(req.body.ratingMin || 0);
+    const price_min_raw = Number(body.priceMin || 0);
+    const price_max_raw = Number(body.priceMax || 0);
+    const group_size_max_raw = Number(body.groupSizeMax || 0);
+    const rating_min_raw = Number(body.ratingMin || 0);
 
     const price_min =
       Number.isFinite(price_min_raw) && price_min_raw >= 0 ? price_min_raw : 0;
@@ -45,19 +46,19 @@ export const search_experiences = async (req, res) => {
 
     const categories = [
       category,
-      ...(Array.isArray(req.body.categories)
-        ? req.body.categories
-        : typeof req.body.categories === "string"
-          ? req.body.categories.split(",")
+      ...(Array.isArray(body.categories)
+        ? body.categories
+        : typeof body.categories === "string"
+          ? body.categories.split(",")
           : []),
     ]
       .map((item) => String(item).trim())
       .filter((item) => item && item.toLowerCase() !== "all");
     const duration_values = (
-      Array.isArray(req.body.duration)
-        ? req.body.duration
-        : typeof req.body.duration === "string"
-          ? req.body.duration.split(",")
+      Array.isArray(body.duration)
+        ? body.duration
+        : typeof body.duration === "string"
+          ? body.duration.split(",")
           : []
     )
       .map((item) => String(item).trim())
@@ -98,38 +99,38 @@ export const search_experiences = async (req, res) => {
       }
     });
     const locations = (
-      Array.isArray(req.body.locations)
-        ? req.body.locations
-        : typeof req.body.locations === "string"
-          ? req.body.locations.split(",")
+      Array.isArray(body.locations)
+        ? body.locations
+        : typeof body.locations === "string"
+          ? body.locations.split(",")
           : []
     )
       .map((item) => String(item).trim())
       .filter(Boolean);
     const group_types = (
-      Array.isArray(req.body.groupType)
-        ? req.body.groupType
-        : typeof req.body.groupType === "string"
-          ? req.body.groupType.split(",")
+      Array.isArray(body.groupType)
+        ? body.groupType
+        : typeof body.groupType === "string"
+          ? body.groupType.split(",")
           : []
     )
       .map((item) => String(item).trim())
       .map((item) => item.toLowerCase())
       .filter((item) => item && item !== "all");
     const languages = (
-      Array.isArray(req.body.languages)
-        ? req.body.languages
-        : typeof req.body.languages === "string"
-          ? req.body.languages.split(",")
+      Array.isArray(body.languages)
+        ? body.languages
+        : typeof body.languages === "string"
+          ? body.languages.split(",")
           : []
     )
       .map((item) => String(item).trim())
       .filter(Boolean);
     const operators = (
-      Array.isArray(req.body.operators)
-        ? req.body.operators
-        : typeof req.body.operators === "string"
-          ? req.body.operators.split(",")
+      Array.isArray(body.operators)
+        ? body.operators
+        : typeof body.operators === "string"
+          ? body.operators.split(",")
           : []
     )
       .map((item) => String(item).trim())
@@ -273,7 +274,7 @@ export const search_experiences = async (req, res) => {
       filter.rating_score = { $gte: rating_min };
     }
 
-    const sort_value = String(req.body.sort || "recommended")
+    const sort_value = String(body.sort || "recommended")
       .trim()
       .toLowerCase();
     let sort_stage = { rating_score: -1, reviews_count: -1, createdAt: -1 };
@@ -370,6 +371,7 @@ export const search_experiences = async (req, res) => {
 
 export const get_experience_details = async (req, res) => {
   try {
+    const body = req.body || {};
     const experience_id = req.params.experienceId;
 
     if (!mongoose.Types.ObjectId.isValid(experience_id)) {
@@ -391,8 +393,8 @@ export const get_experience_details = async (req, res) => {
       });
     }
 
-    const adults_raw = Number(req.body.adults || 1);
-    const children_raw = Number(req.body.children || 0);
+    const adults_raw = Number(body.adults || 1);
+    const children_raw = Number(body.children || 0);
     const adults =
       Number.isFinite(adults_raw) && adults_raw >= 0 ? adults_raw : 1;
     const children =

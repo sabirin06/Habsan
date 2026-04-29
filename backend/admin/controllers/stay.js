@@ -3,8 +3,9 @@ import Property from "../../configs/models/models/property.js";
 
 export const search_stays = async (req, res) => {
   try {
-    const page_raw = Number(req.body.page || 1);
-    const limit_raw = Number(req.body.limit || 18);
+    const body = req.body || {};
+    const page_raw = Number(body.page || 1);
+    const limit_raw = Number(body.limit || 18);
     const page = Number.isFinite(page_raw) && page_raw > 0 ? page_raw : 1;
     const limit =
       Number.isFinite(limit_raw) && limit_raw > 0
@@ -12,18 +13,18 @@ export const search_stays = async (req, res) => {
         : 18;
     const skip = (page - 1) * limit;
 
-    const type_value = req.body.type
-      ? String(req.body.type).trim().toLowerCase()
+    const type_value = body.type
+      ? String(body.type).trim().toLowerCase()
       : "";
     const normalized_type =
       type_value === "appartment" ? "apartment" : type_value;
-    const destination = req.body.destination
-      ? String(req.body.destination).trim()
+    const destination = body.destination
+      ? String(body.destination).trim()
       : "";
 
-    const adults_raw = Number(req.body.adults || 1);
-    const children_raw = Number(req.body.children || 0);
-    const rooms_raw = Number(req.body.rooms || 1);
+    const adults_raw = Number(body.adults || 1);
+    const children_raw = Number(body.children || 0);
+    const rooms_raw = Number(body.rooms || 1);
     const adults =
       Number.isFinite(adults_raw) && adults_raw >= 0 ? adults_raw : 1;
     const children =
@@ -31,13 +32,13 @@ export const search_stays = async (req, res) => {
     const rooms = Number.isFinite(rooms_raw) && rooms_raw > 0 ? rooms_raw : 1;
     const travelers = adults + children;
 
-    const entire_place = Boolean(req.body.entirePlace);
+    const entire_place = Boolean(body.entirePlace);
 
-    const price_min_raw = Number(req.body.priceMin || 0);
-    const price_max_raw = Number(req.body.priceMax || 0);
-    const guest_rating_min_raw = Number(req.body.guestRatingMin || 0);
-    const bedrooms_min_raw = Number(req.body.bedroomsMin || 0);
-    const location_radius_raw = Number(req.body.locationRadiusKm || 0);
+    const price_min_raw = Number(body.priceMin || 0);
+    const price_max_raw = Number(body.priceMax || 0);
+    const guest_rating_min_raw = Number(body.guestRatingMin || 0);
+    const bedrooms_min_raw = Number(body.bedroomsMin || 0);
+    const location_radius_raw = Number(body.locationRadiusKm || 0);
 
     const price_min =
       Number.isFinite(price_min_raw) && price_min_raw >= 0 ? price_min_raw : 0;
@@ -56,40 +57,40 @@ export const search_stays = async (req, res) => {
         ? location_radius_raw
         : 0;
 
-    const amenities = Array.isArray(req.body.amenities)
-      ? req.body.amenities.map((item) => String(item).trim()).filter(Boolean)
-      : typeof req.body.amenities === "string"
-        ? req.body.amenities
+    const amenities = Array.isArray(body.amenities)
+      ? body.amenities.map((item) => String(item).trim()).filter(Boolean)
+      : typeof body.amenities === "string"
+        ? body.amenities
             .split(",")
             .map((item) => item.trim())
             .filter(Boolean)
         : [];
 
-    const star_ratings = Array.isArray(req.body.starRatings)
-      ? req.body.starRatings
+    const star_ratings = Array.isArray(body.starRatings)
+      ? body.starRatings
           .map((item) => Number(item))
           .filter((item) => Number.isFinite(item))
-      : typeof req.body.starRatings === "string"
-        ? req.body.starRatings
+      : typeof body.starRatings === "string"
+        ? body.starRatings
             .split(",")
             .map((item) => Number(item.trim()))
             .filter((item) => Number.isFinite(item))
         : [];
 
-    const hotel_chains = Array.isArray(req.body.hotelChains)
-      ? req.body.hotelChains.map((item) => String(item).trim()).filter(Boolean)
-      : typeof req.body.hotelChains === "string"
-        ? req.body.hotelChains
+    const hotel_chains = Array.isArray(body.hotelChains)
+      ? body.hotelChains.map((item) => String(item).trim()).filter(Boolean)
+      : typeof body.hotelChains === "string"
+        ? body.hotelChains
             .split(",")
             .map((item) => item.trim())
             .filter(Boolean)
         : [];
 
-    const breakfast_included = req.body.breakfastIncluded === true;
-    const free_cancellation = req.body.freeCancellation === true;
-    const kitchen = req.body.kitchen === true;
-    const washing_machine = req.body.washingMachine === true;
-    const long_stay_discount = req.body.longStayDiscount === true;
+    const breakfast_included = body.breakfastIncluded === true;
+    const free_cancellation = body.freeCancellation === true;
+    const kitchen = body.kitchen === true;
+    const washing_machine = body.washingMachine === true;
+    const long_stay_discount = body.longStayDiscount === true;
 
     const filter = { status: "active" };
 
@@ -170,7 +171,7 @@ export const search_stays = async (req, res) => {
       filter.long_stay_discount = true;
     }
 
-    const sort_value = String(req.body.sort || "recommended")
+    const sort_value = String(body.sort || "recommended")
       .trim()
       .toLowerCase();
     let sort_stage = { rating: -1, review_count: -1, createdAt: -1 };
@@ -189,8 +190,8 @@ export const search_stays = async (req, res) => {
       Property.countDocuments(filter),
     ]);
 
-    const visitor_lat = Number(req.body.visitorLat);
-    const visitor_lng = Number(req.body.visitorLng);
+    const visitor_lat = Number(body.visitorLat);
+    const visitor_lng = Number(body.visitorLng);
     const has_visitor_coordinates =
       Number.isFinite(visitor_lat) && Number.isFinite(visitor_lng);
 
@@ -273,6 +274,7 @@ export const search_stays = async (req, res) => {
 
 export const get_stay_details = async (req, res) => {
   try {
+    const body = req.body || {};
     const stay_id = req.params.stayId;
 
     if (!mongoose.Types.ObjectId.isValid(stay_id)) {
@@ -294,12 +296,12 @@ export const get_stay_details = async (req, res) => {
       });
     }
 
-    const check_in = req.body.checkIn ? String(req.body.checkIn).trim() : "";
-    const check_out = req.body.checkOut ? String(req.body.checkOut).trim() : "";
+    const check_in = body.checkIn ? String(body.checkIn).trim() : "";
+    const check_out = body.checkOut ? String(body.checkOut).trim() : "";
 
-    const adults_raw = Number(req.body.adults || 1);
-    const children_raw = Number(req.body.children || 0);
-    const rooms_raw = Number(req.body.rooms || 1);
+    const adults_raw = Number(body.adults || 1);
+    const children_raw = Number(body.children || 0);
+    const rooms_raw = Number(body.rooms || 1);
     const adults =
       Number.isFinite(adults_raw) && adults_raw >= 0 ? adults_raw : 1;
     const children =
