@@ -15,8 +15,10 @@ import AdminVender from "./admin/routes/vender.js";
 import AdminSettings from "./admin/routes/settings.js";
 import AdminExperiences from "./admin/routes/expriences.js";
 import AdminStay from "./admin/routes/stay.js";
+import AdminTransport from "./admin/routes/transport.js";
 import ExperiencePanelRoutes from "./Exprience/routes/expriences.js";
 import StayPanelRoutes from "./Stay/routes/stay.js";
+import TransportPanelRoutes from "./Transport/routes/transport.js";
 import UserRoutes from "./users/routes/user.js";
 
 function parallel(middlewares) {
@@ -98,6 +100,8 @@ export default function () {
   AdminSettings(app);
   AdminExperiences(app);
   AdminStay(app);
+  TransportPanelRoutes(app);
+  AdminTransport(app);
   ExperiencePanelRoutes(app);
   StayPanelRoutes(app);
   UserRoutes(app);

@@ -1,5 +1,7 @@
 ................. User Auth APIs ...........................
 
+BASE_URL: https://habsantech.com
+
 1) POST /api/auth/register
 Request body (snake_case):
 {

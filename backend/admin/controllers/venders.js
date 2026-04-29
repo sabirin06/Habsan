@@ -124,3 +124,111 @@ export const create_vendor = async (req, res) => {
     });
   }
 };
+
+export const vendor_list = async (req, res) => {
+  try {
+    const page_raw = Number(req.body.page || 1);
+    const limit_raw = Number(req.body.limit || 20);
+    const page = Number.isFinite(page_raw) && page_raw > 0 ? page_raw : 1;
+    const limit =
+      Number.isFinite(limit_raw) && limit_raw > 0
+        ? Math.min(limit_raw, 100)
+        : 20;
+    const skip = (page - 1) * limit;
+
+    const filter = { is_deleted: false };
+
+    if (req.body.business_type !== undefined && req.body.business_type !== "") {
+      const business_type = Number(req.body.business_type);
+      if (Number.isFinite(business_type)) {
+        filter.business_type = business_type;
+      }
+    }
+
+    if (req.body.status !== undefined && req.body.status !== "") {
+      const status = Number(req.body.status);
+      if (Number.isFinite(status)) {
+        filter.status = status;
+      }
+    }
+
+    if (req.body.country_id && mongoose.Types.ObjectId.isValid(req.body.country_id)) {
+      filter.country_id = new mongoose.Types.ObjectId(String(req.body.country_id));
+    }
+
+    if (req.body.city_id && mongoose.Types.ObjectId.isValid(req.body.city_id)) {
+      filter.city_id = new mongoose.Types.ObjectId(String(req.body.city_id));
+    }
+
+    const and_filters = [];
+    if (req.body.search) {
+      const search_regex = new RegExp(
+        String(req.body.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i",
+      );
+      and_filters.push({
+        $or: [
+          { company_name: search_regex },
+          { email: search_regex },
+          { phone: search_regex },
+          { license_number: search_regex },
+        ],
+      });
+    }
+
+    const query = and_filters.length
+      ? { ...filter, $and: and_filters }
+      : filter;
+
+    const [vendors, total] = await Promise.all([
+      Vendor.find(query)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Vendor.countDocuments(query),
+    ]);
+
+    const items = vendors.map((vendor) => ({
+      id: String(vendor._id),
+      company_name: vendor.company_name || "",
+      business_type: Number(vendor.business_type || 0),
+      email: vendor.email || "",
+      phone: vendor.phone || "",
+      company_logo: vendor.company_logo || "",
+      description: vendor.description || "",
+      country_id: vendor.country_id ? String(vendor.country_id) : "",
+      city_id: vendor.city_id ? String(vendor.city_id) : "",
+      address: vendor.address || "",
+      license_number: vendor.license_number || "",
+      commission_rate: Number(vendor.commission_rate || 0),
+      status: Number(vendor.status || 0),
+      approved_by: vendor.approved_by ? String(vendor.approved_by) : "",
+      approved_at: vendor.approved_at || null,
+      last_login_at: vendor.last_login_at || null,
+      last_login_ip: vendor.last_login_ip || "",
+      created_at: vendor.createdAt,
+      updated_at: vendor.updatedAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Vendor list fetched",
+      data: {
+        items,
+        pagination: {
+          page,
+          limit,
+          total,
+          has_more: page * limit < total,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("vendor_list error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch vendor list",
+    });
+  }
+};
