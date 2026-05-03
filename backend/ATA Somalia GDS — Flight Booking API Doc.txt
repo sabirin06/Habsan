@@ -1,0 +1,1760 @@
+ATA Somalia GDS — Flight Booking API Documentation
+Version: 1.0
+Last Updated: April 5, 2026
+Base URL (Production): https://api.atasomalia.com/api
+
+
+Table of Contents
+Overview
+Authentication
+Lookup Endpoints
+Flight Search
+Flight Booking
+Payment Processing
+Booking Management
+Cancellation
+Complete Booking Flow
+Enums & Reference Data
+Error Handling
+
+
+1. Overview
+The ATA Somalia GDS API enables third-party platforms to search for flights, create bookings, process payments, and manage reservations programmatically.
+Base URLs
+Environment
+Base URL
+Production (ATA Somalia)
+https://api.atasomalia.com/api
+Production (Taam Travel)
+https://api.taamtravel.so/api
+Production (AfroAtlas)
+https://api.taajnetwork.com/api
+
+Authentication Scheme
+All authenticated endpoints require a Bearer JWT token in the Authorization header:
+
+Authorization: Bearer <access_token>
+Common Headers
+Header
+Value
+Required
+Content-Type
+application/json
+Yes
+Authorization
+Bearer <access_token>
+For protected endpoints
+
+Pagination
+Paginated endpoints accept query parameters:
+
+Parameter
+Type
+Description
+PageSize
+integer
+Number of items per page
+PageNumber
+integer
+Page number (1-based)
+
+
+Pagination metadata is returned in response headers.
+
+
+2. Authentication
+2.1 Login
+Authenticate with username/password to obtain a JWT access token.
+
+POST /authenticator/loginUser
+
+Request Body:
+
+{
+
+  "username": "user@example.com",
+
+  "password": "YourSecurePassword",
+
+  "ipAddress": "203.0.113.42"
+
+}
+
+Field
+Type
+Required
+Description
+username
+string
+✅
+Username or email (3–50 chars)
+password
+string
+✅
+Password (3–50 chars)
+ipAddress
+string
+❌
+Client IP for login tracking
+
+
+Response 200 OK:
+
+{
+
+  "id": 1234,
+
+  "fullName": "Ahmed Mohamed",
+
+  "email": "ahmed@example.com",
+
+  "username": "ahmed@example.com",
+
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+
+  "refreshToken": "dGhpcyBpcyBhIHNhbXBsZSByZWZyZXNoIHRva2Vu",
+
+  "expireAt": 1743933600,
+
+  "role": 3,
+
+  "roleSupportId": 2,
+
+  "allowedAirline": 0,
+
+  "resetPassword": false,
+
+  "allowPassengerNameChange": false
+
+}
+
+Field
+Type
+Description
+id
+long
+User ID
+fullName
+string
+User's full name
+email
+string
+User's email
+accessToken
+string
+JWT token for API requests
+refreshToken
+string
+Token to refresh expired access tokens
+expireAt
+long
+Token expiration (Unix timestamp)
+role
+long
+Role ID
+roleSupportId
+long
+Associated entity ID (e.g., Agency ID)
+
+
+
+2.2 Refresh Token
+Obtain a new access token using an existing refresh token.
+
+POST /authenticator/RefreshToken
+
+Request Body:
+
+{
+
+  "userId": 1234,
+
+  "refreshToken": "dGhpcyBpcyBhIHNhbXBsZSByZWZyZXNoIHRva2Vu"
+
+}
+
+Field
+Type
+Required
+Description
+userId
+integer
+❌
+User ID
+refreshToken
+string
+❌
+Previously issued refresh token
+
+
+Response 200 OK:
+
+{
+
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+
+  "refreshToken": "bmV3IHJlZnJlc2ggdG9rZW4gc3RyaW5n",
+
+  "expireAt": 1743937200
+
+}
+
+
+2.3 Logout
+Invalidate the current session.
+
+POST /authenticator/logout 🔒 Requires Authentication
+
+Response: 200 OK
+
+
+3. Lookup Endpoints
+These endpoints provide reference/master data needed for the booking flow.
+3.1 Search Airports
+Search for airports by name or IATA code. Use this to build the departure/arrival city selector.
+
+POST /Airport/search
+
+Request Body:
+
+{
+
+  "search": "Mogadishu"
+
+}
+
+Field
+Type
+Required
+Description
+search
+string
+✅
+Keyword to search by airport name or IATA code
+
+
+Response 200 OK:
+
+[
+
+  {
+
+    "id": 1,
+
+    "name": "Aden Abdulle International Airport",
+
+    "code": "MGQ",
+
+    "countryId": 1,
+
+    "cityId": 1,
+
+    "country": "Somalia",
+
+    "city": "Mogadishu",
+
+    "latitude": "2.0144",
+
+    "longitude": "45.3047",
+
+    "isActive": true,
+
+    "createdDate": "2024-01-01T00:00:00",
+
+    "modifiedDate": null
+
+  }
+
+]
+
+
+3.2 Get Airport by Code
+GET /Airport/code/{code}
+
+Path Parameter:
+
+Parameter
+Type
+Description
+code
+string
+IATA airport code (e.g., MGQ, NBO, JFK)
+
+
+Response: Same structure as airport search (single object).
+
+
+3.3 Get All Airports
+GET /Airport
+
+Response: Array of AirportDto objects (same structure as search).
+
+
+3.4 Get All Countries
+GET /Country
+
+Response 200 OK:
+
+[
+
+  {
+
+    "id": 1,
+
+    "name": "Somalia",
+
+    "code": "SO"
+
+  }
+
+]
+
+
+3.5 Get Airlines
+GET /Airline
+
+Response 200 OK:
+
+[
+
+  {
+
+    "id": 1,
+
+    "name": "Jubba Airways",
+
+    "code": "3J"
+
+  }
+
+]
+
+
+3.6 Get Payment Options
+Get available payment gateways for a specific microsite.
+
+GET /FlightBooking/paymentOptions/microSiteClientId/{microSiteClientId}
+
+Path Parameter:
+
+Parameter
+Type
+Description
+microSiteClientId
+integer
+Microsite client ID (e.g., 2 for ATA Somalia)
+
+
+Response 200 OK:
+
+[
+
+  { "id": 1, "name": "TaajPay" },
+
+  { "id": 2, "name": "Deposit" },
+
+  { "id": 5, "name": "iPayAfrica" }
+
+]
+
+
+4. Flight Search
+4.1 Search Available Flights
+Search for available flights based on trip criteria.
+
+POST /FlightQuote/search
+
+Request Body:
+
+{
+
+  "tripType": "OneWay",
+
+  "departureCity": "MGQ",
+
+  "arrivalCity": "NBO",
+
+  "departureDate": "2026-04-07",
+
+  "returnDate": null,
+
+  "adults": 1,
+
+  "children": 0,
+
+  "childrenAges": [],
+
+  "infants": 0,
+
+  "infantsAges": [],
+
+  "cabinClass": "Economy",
+
+  "isFlexibleDates": true,
+
+  "isDirectFlight": true,
+
+  "micrositeClientId": 2,
+
+  "provider": null
+
+}
+
+Field
+Type
+Required
+Description
+tripType
+string
+✅
+"OneWay", "RoundTrip", or "MultiCity"
+departureCity
+string
+✅
+IATA airport code (e.g., "MGQ")
+arrivalCity
+string
+✅
+IATA airport code (e.g., "NBO")
+departureDate
+string
+✅
+ISO date "YYYY-MM-DD"
+returnDate
+string
+❌
+ISO date — required if tripType = "RoundTrip"
+adults
+integer
+✅
+Number of adult passengers (min: 1)
+children
+integer
+❌
+Number of child passengers (2–11 yrs)
+childrenAges
+integer[]
+❌
+Required if children > 0
+infants
+integer
+❌
+Number of infant passengers (0–2 yrs)
+infantsAges
+integer[]
+❌
+Required if infants > 0
+cabinClass
+string
+✅
+"Economy", "Business", "First", "Premium"
+isFlexibleDates
+boolean
+❌
+Include nearby date results (default: false)
+isDirectFlight
+boolean
+❌
+Only direct flights (default: false)
+micrositeClientId
+integer
+❌
+Microsite identifier
+provider
+string
+❌
+Specific provider (e.g., "Siliconsom", "StarSky")
+
+
+Response 200 OK:
+
+{
+
+  "id": 5678,
+
+  "tripType": "OneWay",
+
+  "departureCity": "MGQ",
+
+  "arrivalCity": "NBO",
+
+  "departureDate": "2026-04-07T00:00:00",
+
+  "returnDate": null,
+
+  "adults": 1,
+
+  "children": 0,
+
+  "infants": 0,
+
+  "cabinClass": "Economy",
+
+  "isFlexibleDates": true,
+
+  "isDirectFlight": true,
+
+  "flights": [
+
+    {
+
+      "id": 101,
+
+      "totalAmount": 285.00,
+
+      "taxesAmount": 35.00,
+
+      "ticketAmount": 250.00,
+
+      "agencyMarkup": 0.00,
+
+      "microSiteMarkup": 0.00,
+
+      "afroMarkup": 0.00,
+
+      "currency": "USD",
+
+      "provider": "Siliconsom",
+
+      "fareType": "Economy",
+
+      "outBound": {
+
+        "departure": "MGQ",
+
+        "arrival": "NBO",
+
+        "departureAirport": "Aden Abdulle International Airport",
+
+        "arrivalAirport": "Jomo Kenyatta International Airport",
+
+        "departureDateTime": "2026-04-07T06:00:00",
+
+        "arrivalDateTime": "2026-04-07T08:30:00",
+
+        "departureDate": "2026-04-07",
+
+        "departureTime": "06:00",
+
+        "arrivalDate": "2026-04-07",
+
+        "arrivalTime": "08:30",
+
+        "duration": 150,
+
+        "baggageAllowance": "23kg",
+
+        "companyCode": "3J",
+
+        "segments": [
+
+          {
+
+            "departure": "MGQ",
+
+            "arrival": "NBO",
+
+            "departureAirport": "Aden Abdulle International Airport",
+
+            "arrivalAirport": "Jomo Kenyatta International Airport",
+
+            "departureDateTime": "2026-04-07T06:00:00",
+
+            "arrivalDateTime": "2026-04-07T08:30:00",
+
+            "duration": "2h 30m",
+
+            "airlineLogo": "https://api.atasomalia.com/logos/3J.png",
+
+            "airline": "3J",
+
+            "airlineName": "Jubba Airways",
+
+            "flightNumber": "3J101",
+
+            "cabinType": "Economy",
+
+            "fareType": "Economy"
+
+          }
+
+        ],
+
+        "fareRules": []
+
+      },
+
+      "inBound": null
+
+    }
+
+  ]
+
+}
+Response Field Reference
+Top-Level Response (FlightQuoteResponseDto):
+
+Field
+Type
+Description
+id
+integer
+Search request ID — needed for booking
+flights
+array
+Array of available flight options
+
+
+Flight Option (FlightsRecommendationResponseDto):
+
+Field
+Type
+Description
+id
+integer
+Flight option ID — needed for booking
+totalAmount
+decimal
+Total price per passenger
+taxesAmount
+decimal
+Taxes included
+ticketAmount
+decimal
+Base fare
+currency
+string
+Currency code ("USD", etc.)
+provider
+string
+Flight provider name
+outBound
+object
+Outbound flight leg
+inBound
+object|null
+Return leg (null for one-way)
+
+
+Flight Leg (FlightBoundResponseDto):
+
+Field
+Type
+Description
+departure / arrival
+string
+IATA airport codes
+departureAirport / arrivalAirport
+string
+Full airport names
+departureDateTime / arrivalDateTime
+datetime
+ISO date-time
+duration
+integer
+Duration in minutes
+baggageAllowance
+string
+e.g., "23kg"
+companyCode
+string
+Airline code
+segments
+array
+Individual flight segments
+
+
+Segment (FlightSegmentResponseDto):
+
+Field
+Type
+Description
+flightNumber
+string
+Flight number (e.g., "3J101")
+airline
+string
+Airline code
+airlineName
+string
+Full airline name
+duration
+string
+Formatted duration (e.g., "2h 30m")
+cabinType
+string
+Cabin class
+
+
+
+5. Flight Booking
+5.1 Create Booking
+Submit a flight booking with selected flight(s) and passenger information.
+
+POST /FlightBooking/addBooking
+
+Request Body:
+
+{
+
+  "flightSelection": [
+
+    {
+
+      "searchId": 5678,
+
+      "flightId": 101
+
+    }
+
+  ],
+
+  "paymentTypeId": 5,
+
+  "paymentParams": null,
+
+  "microSiteClientId": 2,
+
+  "passengers": [
+
+    {
+
+      "type": "Adult",
+
+      "title": "Mr",
+
+      "firstName": "Ahmed",
+
+      "lastName": "Mohamed",
+
+      "requestedAge": 30,
+
+      "birthDate": "1996-03-15",
+
+      "documentType": "Passport",
+
+      "documentNumber": "P12345678",
+
+      "documentExpiration": "2030-12-31",
+
+      "courtesyTitle": "Mr",
+
+      "email": "ahmed@example.com",
+
+      "phoneCountryCode": "+252",
+
+      "phone": "611777111",
+
+      "country": "Somalia",
+
+      "countryId": 1
+
+    }
+
+  ]
+
+}
+Request Fields
+Top Level (FlightBookingRequestDto):
+
+Field
+Type
+Required
+Description
+flightSelection
+array
+✅
+Selected flight(s) from search
+paymentTypeId
+integer
+✅
+Payment method ID (see Payment Gateways)
+paymentParams
+object
+❌
+Additional payment parameters
+microSiteClientId
+integer
+✅
+Microsite ID (e.g., 2 for ATA Somalia)
+passengers
+array
+✅
+Passenger details
+
+
+Flight Selection (FlightSelectionRequest):
+
+Field
+Type
+Required
+Description
+searchId
+integer
+✅
+The id from FlightQuoteResponseDto
+flightId
+integer
+✅
+The id from FlightsRecommendationResponseDto
+
+
+Note: For round-trip bookings, you may need multiple entries in flightSelection if outbound and return are separate search results.
+
+Passenger (FlightBookingPassengerRequestDto):
+
+Field
+Type
+Required
+Description
+type
+string
+✅
+"Adult", "Child", or "Infant"
+title
+string
+✅
+"Mr", "Ms", "Mrs", "Miss", "Master"
+firstName
+string
+✅
+Passenger's first name
+lastName
+string
+✅
+Passenger's last name
+requestedAge
+integer
+✅
+Passenger's age (0–120)
+birthDate
+string
+✅
+Date of birth ("YYYY-MM-DD")
+documentType
+string
+✅
+"Passport" or "NationalID"
+documentNumber
+string
+✅
+Passport or ID number
+documentExpiration
+string
+✅
+Document expiry date ("YYYY-MM-DD")
+courtesyTitle
+string
+❌
+Courtesy title
+email
+string
+✅
+Contact email
+phoneCountryCode
+string
+✅
+Phone country code (e.g., "+252")
+phone
+string
+✅
+Phone number
+country
+string
+✅
+Country name
+countryId
+integer
+❌
+Country ID
+
+
+Response 200 OK:
+
+{
+
+  "type": "DirectBooking",
+
+  "redirectUrl": null,
+
+  "ticketAmount": 250.00,
+
+  "taxAmount": 35.00,
+
+  "agencyMarkup": 0.00,
+
+  "microSiteMarkup": 0.00,
+
+  "afroMarkup": 0.00,
+
+  "totalAmount": 285.00,
+
+  "currency": "USD",
+
+  "parentPnr": "ATAS-2026-0001",
+
+  "status": "Confirmed",
+
+  "flights": [
+
+    {
+
+      "ticketAmount": 250.00,
+
+      "taxAmount": 35.00,
+
+      "agencyMarkup": 0.00,
+
+      "microSiteMarkup": 0.00,
+
+      "afroMarkup": 0.00,
+
+      "totalAmount": 285.00,
+
+      "currency": "USD",
+
+      "pnr": "ABC123",
+
+      "bookingReference": "REF-001",
+
+      "outBound": { "...flight leg details..." },
+
+      "inBound": null,
+
+      "passengers": [
+
+        {
+
+          "type": "Adult",
+
+          "title": "Mr",
+
+          "firstName": "Ahmed",
+
+          "lastName": "Mohamed",
+
+          "email": "ahmed@example.com",
+
+          "phone": "611777111"
+
+        }
+
+      ]
+
+    }
+
+  ],
+
+  "passengers": []
+
+}
+Response Fields
+Field
+Type
+Description
+type
+string
+"DirectBooking" (confirmed) or "RedirectUrl" (needs payment)
+redirectUrl
+string|null
+Payment URL if type = "RedirectUrl"
+parentPnr
+string
+Unique booking reference — use this for all subsequent operations
+status
+string
+Booking status ("Confirmed", "Pending", etc.)
+totalAmount
+decimal
+Total amount for all passengers
+flights
+array
+Booked flight details including PNR and passengers
+
+
+Important: If type is "RedirectUrl", redirect the user to redirectUrl for payment. After payment, call the Payment Confirmation endpoint.
+
+
+6. Payment Processing
+6.1 Generate iPayAfrica Payment
+Generate a payment link via iPayAfrica gateway.
+
+POST /payment/generate/iPayAfrica
+
+Request Body:
+
+{
+
+  "orderId": "ATAS-2026-0001",
+
+  "reservationId": "REF-001",
+
+  "amount": 285.00,
+
+  "phoneNumber": "+252611777111",
+
+  "email": "ahmed@example.com",
+
+  "callbackUrl": "https://atasomalia.com/booking-confirmation",
+
+  "additionalInfo": "Flight booking MGQ-NBO",
+
+  "currency": "USD",
+
+  "paymentDescription": "Flight booking",
+
+  "referenceId": "ATAS-2026-0001",
+
+  "micrositeId": 2
+
+}
+
+Field
+Type
+Required
+Description
+orderId
+string
+✅
+The parentPnr from booking response
+reservationId
+string
+✅
+Booking reference
+amount
+decimal
+✅
+Total amount to charge
+phoneNumber
+string
+✅
+Customer phone number
+email
+string
+✅
+Customer email
+callbackUrl
+string
+✅
+URL to redirect after payment
+additionalInfo
+string
+❌
+Additional info
+currency
+string
+✅
+"USD" or "SOL"
+paymentDescription
+string
+❌
+Description
+referenceId
+string
+✅
+Unique reference
+micrositeId
+integer
+✅
+Microsite ID
+
+
+Response: Payment gateway URL/details for user redirection.
+
+
+6.2 Confirm Payment
+After the user completes payment via an external gateway, confirm the payment to finalize the booking.
+
+POST /payment/process 🔒 Requires Authentication
+
+Request Body:
+
+{
+
+  "parentPnr": "ATAS-2026-0001",
+
+  "transactionId": "TXN-iPayAfrica-12345",
+
+  "module": "Flight",
+
+  "status": "SUCCESS",
+
+  "amount": 285.00
+
+}
+
+Field
+Type
+Required
+Description
+parentPnr
+string
+✅
+Booking reference from addBooking response
+transactionId
+string
+✅
+Payment gateway transaction ID
+module
+string
+✅
+Always "Flight" for flight bookings
+status
+string
+✅
+"SUCCESS" for confirmed payments
+amount
+decimal
+✅
+Amount paid
+
+
+Response: Booking confirmed. Ticket email sent automatically.
+
+
+7. Booking Management
+7.1 Get Booking by PNR
+Retrieve complete booking details using the parent PNR.
+
+GET /FlightBooking/parentPnr/{parentPnr}
+
+Path Parameter:
+
+Parameter
+Type
+Description
+parentPnr
+string
+Unique booking reference
+
+
+Response 200 OK:
+
+{
+
+  "ticketAmount": 250.00,
+
+  "taxAmount": 35.00,
+
+  "agencyMarkup": 0.00,
+
+  "microSiteMarkup": 0.00,
+
+  "afroMarkup": 0.00,
+
+  "totalAmount": 285.00,
+
+  "currency": "USD",
+
+  "pnr": "ABC123",
+
+  "bookingReference": "REF-001",
+
+  "parentPnr": "ATAS-2026-0001",
+
+  "status": "Confirmed",
+
+  "paymentStatus": "PaymentComplete",
+
+  "bookingDate": "2026-04-05T12:00:00",
+
+  "agency": "ATA Somalia",
+
+  "agencyId": 2,
+
+  "createdBy": "ahmed@example.com",
+
+  "flights": [
+
+    {
+
+      "ticketAmount": 250.00,
+
+      "taxAmount": 35.00,
+
+      "totalAmount": 285.00,
+
+      "currency": "USD",
+
+      "pnr": "ABC123",
+
+      "bookingReference": "REF-001",
+
+      "outBound": {
+
+        "departure": "MGQ",
+
+        "arrival": "NBO",
+
+        "departureDateTime": "2026-04-07T06:00:00",
+
+        "arrivalDateTime": "2026-04-07T08:30:00",
+
+        "segments": [
+
+          {
+
+            "airline": "3J",
+
+            "airlineName": "Jubba Airways",
+
+            "flightNumber": "3J101",
+
+            "cabinType": "Economy"
+
+          }
+
+        ]
+
+      },
+
+      "inBound": null,
+
+      "passengers": [
+
+        {
+
+          "type": "Adult",
+
+          "title": "Mr",
+
+          "firstName": "Ahmed",
+
+          "lastName": "Mohamed",
+
+          "email": "ahmed@example.com",
+
+          "phone": "611777111",
+
+          "documentType": "Passport",
+
+          "documentNumber": "P12345678"
+
+        }
+
+      ]
+
+    }
+
+  ]
+
+}
+
+
+7.2 Resend Ticket Email
+GET /FlightBooking/parentPnr/{parentPnr}/email/{email}
+
+Parameter
+Type
+Description
+parentPnr
+string
+Booking reference
+email
+string
+Email address to send ticket to
+
+
+
+7.3 Get My Bookings (Paginated)
+POST /FlightBooking/myBookings?PageSize=10&PageNumber=1 🔒 Requires Authentication
+
+Request Body:
+
+{
+
+  "startDate": "2026-01-01",
+
+  "endDate": "2026-12-31",
+
+  "microSiteClientId": 2,
+
+  "filters": [],
+
+  "unPaged": false,
+
+  "sortColumn": "",
+
+  "sortDirection": "",
+
+  "keyword": ""
+
+}
+
+Field
+Type
+Required
+Description
+startDate
+datetime
+✅
+Filter start date
+endDate
+datetime
+✅
+Filter end date
+microSiteClientId
+integer
+✅
+Microsite ID
+filters
+array
+❌
+Additional filters
+unPaged
+boolean
+❌
+Return all results without pagination
+sortColumn
+string
+❌
+Sort by column
+sortDirection
+string
+❌
+"asc" or "desc"
+keyword
+string
+❌
+Search keyword (PNR, name, etc.)
+
+
+Response 200 OK: Array of booking summaries:
+
+[
+
+  {
+
+    "id": 1,
+
+    "ticketAmount": 250.00,
+
+    "taxAmount": 35.00,
+
+    "totalAmount": 285.00,
+
+    "currency": "USD",
+
+    "parentPnr": "ATAS-2026-0001",
+
+    "flightPnr": "ABC123",
+
+    "bookingReference": "REF-001",
+
+    "status": "Confirmed",
+
+    "paymentStatus": "PaymentComplete",
+
+    "departure": "MGQ",
+
+    "arrival": "NBO",
+
+    "departureDateTime": "2026-04-07T06:00:00",
+
+    "arrivalDateTime": "2026-04-07T08:30:00",
+
+    "tripType": "OneWay",
+
+    "bookingDate": "2026-04-05T12:00:00",
+
+    "bookingId": 100,
+
+    "airlineName": "Jubba Airways",
+
+    "agency": "ATA Somalia",
+
+    "class": "Economy",
+
+    "passenger": ["Ahmed Mohamed"],
+
+    "passengerCount": 1,
+
+    "passengerPhone": "+252611777111",
+
+    "passengerPassport": "P12345678",
+
+    "createdBy": "ahmed@example.com"
+
+  }
+
+]
+
+
+7.4 Get Booking History
+Track all changes/activities for a booking.
+
+GET /FlightBooking/{flightBookingId}/history
+
+Response 200 OK:
+
+[
+
+  {
+
+    "id": 1,
+
+    "flightBookingId": 100,
+
+    "description": "Booking created",
+
+    "createdAt": "2026-04-05T12:00:00",
+
+    "createdBy": "ahmed@example.com"
+
+  },
+
+  {
+
+    "id": 2,
+
+    "flightBookingId": 100,
+
+    "description": "Payment confirmed via iPayAfrica",
+
+    "createdAt": "2026-04-05T12:05:00",
+
+    "createdBy": "system"
+
+  }
+
+]
+
+
+7.5 Get Fare Rules
+GET /FlightBooking/parentPnr/{parentPnr}/fareRules 🔒 Requires Authentication
+
+Response: Array of fare rules with cancellation/change policies.
+
+
+8. Cancellation
+8.1 Request Cancellation
+POST /Cancellation/client/requestCancellation 🔒 Requires Authentication
+
+Request Body:
+
+{
+
+  "reason": "Change of travel plans",
+
+  "bookingId": 100,
+
+  "module": "Flight"
+
+}
+
+Field
+Type
+Required
+Description
+reason
+string
+✅
+Cancellation reason
+bookingId
+long
+✅
+Flight booking ID
+module
+string
+✅
+Always "Flight"
+
+
+
+8.2 Accept Cancellation Penalty
+PUT /Cancellation/client/acceptPenalty/{requestId} 🔒 Requires Authentication
+
+
+8.3 Reject Cancellation Penalty
+PUT /Cancellation/client/rejectPenalty/{requestId} 🔒 Requires Authentication
+
+
+8.4 Get My Cancellations
+GET /Cancellation/client/getMyCancellation/module/Flight?PageSize=10&PageNumber=1 🔒 Requires Authentication
+
+
+9. Complete Booking Flow
+Here is the step-by-step sequence to book a flight via the API:
+
+┌──────────────────────────────────────────────────────────────────────────┐
+
+│                     COMPLETE BOOKING FLOW                               │
+
+├──────────────────────────────────────────────────────────────────────────┤
+
+│                                                                          │
+
+│  STEP 1: Authenticate                                                    │
+
+│  ────────────────────                                                    │
+
+│  POST /authenticator/loginUser                                           │
+
+│  → Save accessToken for subsequent requests                              │
+
+│                                                                          │
+
+│  STEP 2: Search Airports (optional, for UI)                              │
+
+│  ──────────────────────────────────────────                              │
+
+│  POST /Airport/search  { "search": "Mogadishu" }                        │
+
+│  → Get IATA codes (MGQ, NBO, etc.)                                       │
+
+│                                                                          │
+
+│  STEP 3: Get Payment Options                                             │
+
+│  ────────────────────────────                                            │
+
+│  GET /FlightBooking/paymentOptions/microSiteClientId/2                   │
+
+│  → Get available payment methods                                         │
+
+│                                                                          │
+
+│  STEP 4: Search Flights                                                  │
+
+│  ──────────────────────                                                  │
+
+│  POST /FlightQuote/search                                                │
+
+│  → Returns search ID + list of flights with prices                       │
+
+│  → Note: Save response.id (searchId) and selected flight.id (flightId)  │
+
+│                                                                          │
+
+│  STEP 5: Select Flight                                                   │
+
+│  ─────────────────────                                                   │
+
+│  (Client-side) User picks a flight from the search results               │
+
+│  → Store searchId + flightId                                             │
+
+│  → No separate API call needed                                           │
+
+│                                                                          │
+
+│  STEP 6: Create Booking                                                  │
+
+│  ──────────────────────                                                  │
+
+│  POST /FlightBooking/addBooking                                          │
+
+│  → Send flightSelection, passengers, paymentTypeId                       │
+
+│  → If response.type == "DirectBooking" → Booking is confirmed ✅        │
+
+│  → If response.type == "RedirectUrl" → Proceed to Step 7                │
+
+│                                                                          │
+
+│  STEP 7: Process Payment (if needed)                                     │
+
+│  ────────────────────────────────────                                    │
+
+│  POST /payment/generate/iPayAfrica  (for iPayAfrica gateway)            │
+
+│  → User completes payment on external page                               │
+
+│  → On callback:                                                          │
+
+│  POST /payment/process  { parentPnr, transactionId, status: "SUCCESS" }  │
+
+│  → Booking confirmed ✅                                                  │
+
+│                                                                          │
+
+│  STEP 8: Retrieve Booking                                                │
+
+│  ────────────────────────                                                │
+
+│  GET /FlightBooking/parentPnr/{parentPnr}                                │
+
+│  → Full booking details including PNR, passengers, flight details        │
+
+│                                                                          │
+
+│  STEP 9: Resend Email (optional)                                         │
+
+│  ───────────────────────────────                                         │
+
+│  GET /FlightBooking/parentPnr/{parentPnr}/email/{email}                  │
+
+│  → Ticket confirmation email sent                                        │
+
+│                                                                          │
+
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+10. Enums & Reference Data
+Trip Types
+Value
+Description
+OneWay
+One-way flight
+RoundTrip
+Round-trip (return) flight
+MultiCity
+Multi-city itinerary
+
+Cabin Classes
+Value
+Description
+Economy
+Economy class
+Business
+Business class
+First
+First class
+Premium
+Premium economy
+
+Passenger Types
+Value
+Description
+Adult
+12+ years old
+Child
+2–11 years old
+Infant
+0–2 years old
+
+Passenger Titles
+Value
+Mr
+Ms
+Mrs
+Miss
+Master
+
+Document Types
+Value
+Description
+Passport
+International passport
+NationalID
+National ID card
+
+Payment Gateway IDs
+ID
+Name
+Description
+1
+TaajPay
+TaajPay mobile wallet
+2
+Deposit
+Agency deposit/balance
+3
+WaafiPay
+Waafi mobile payment
+4
+Cash
+Cash payment
+5
+iPayAfrica
+iPayAfrica online payment
+
+Booking Statuses
+Value
+Description
+Reserved
+Temporarily held
+Confirmed
+Booking confirmed
+Pending
+Awaiting confirmation
+NoShow
+Passenger did not show up
+Cancelled
+Booking cancelled
+Rejected
+Booking rejected
+Refunded
+Payment refunded
+Void
+Booking voided
+Boarded
+Passenger boarded
+
+Payment Statuses
+Value
+Description
+PaymentPending
+Awaiting payment
+PaymentFailed
+Payment failed
+PaymentProcessing
+Payment in progress
+PaymentConfirmed
+Payment confirmed
+PaymentOverdue
+Payment overdue
+Refunded
+Refunded
+PaymentHold
+Payment on hold
+PaymentError
+Payment error
+PaymentCancelled
+Payment cancelled
+PaymentComplete
+Payment completed
+
+Microsite Client IDs
+ID
+Client
+1
+AfroAtlas
+2
+ATA Somalia
+3
+Taam Travel
+
+
+
+11. Error Handling
+HTTP Status Codes
+Code
+Description
+200
+Success
+400
+Bad Request — invalid parameters
+401
+Unauthorized — invalid or expired token
+403
+Forbidden — insufficient permissions
+404
+Not Found — resource doesn't exist
+429
+Too Many Requests — rate limited (retry after delay)
+500
+Internal Server Error
+
+Token Expiration
+When accessToken expires, use the refresh token endpoint:
+
+POST /authenticator/RefreshToken
+
+{
+
+  "userId": 1234,
+
+  "refreshToken": "<your_refresh_token>"
+
+}
+
+If the refresh token is also expired, re-authenticate via login.
+
+
+Contact & Support
+Email: info@atasomalia.com
+Phone: +252 611 777 111
+Website: https://atasomalia.com
+

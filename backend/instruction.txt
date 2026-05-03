@@ -565,3 +565,699 @@ Common errors:
 - 400: invalid price
 - 500: Failed to create experience
 
+............... Transportations ...................
+/api/transportation/create
+payload 
+{
+  "vendor_id": "69e6662bcc16143019892a81",
+  "country_id": "69dfd563247785254041313e",
+  "city_id": "69dfd608b07ae926aec48e00",
+  "brand": "Toyota",
+  "model": "Land Cruiser",
+  "year": 2024,
+  "type": "SUV",
+  "transmission": "automatic",
+  "fuel_type": 1,
+  "seats": 7,
+  "price_per_day": 120,
+  "images": [
+    "https://example.com/car-1.jpg",
+    "https://example.com/car-2.jpg"
+  ],
+  "status": "available"
+}
+
+/api/transportation
+/api/transportation/:transport_id
+
+
+............... Flights - ATA Somalia Mock APIs ...................
+Notes:
+- These APIs are mock endpoints that follow the ATA Somalia GDS response shape.
+- Mock data is stored in memory and resets when the backend restarts.
+- Later, production ATA API calls can replace the controller logic without changing frontend routes.
+
+
+1) POST /api/authenticator/loginUser
+Description:
+- Mock ATA login. Returns access and refresh tokens.
+
+Request body:
+{
+	"username": "demo@atasomalia.com",
+	"password": "YourSecurePassword",
+	"ipAddress": "203.0.113.42"
+}
+
+Success (200):
+{
+	"id": 1234,
+	"fullName": "Ahmed Mohamed",
+	"email": "demo@atasomalia.com",
+	"username": "demo@atasomalia.com",
+	"accessToken": "mock-ata-access-token",
+	"refreshToken": "mock-ata-refresh-token",
+	"expireAt": 1777800000,
+	"role": 3,
+	"roleSupportId": 2,
+	"allowedAirline": 0,
+	"resetPassword": false,
+	"allowPassengerNameChange": false
+}
+
+
+2) POST /api/authenticator/RefreshToken
+Description:
+- Mock refresh token endpoint.
+
+Request body:
+{
+	"userId": 1234,
+	"refreshToken": "mock-ata-refresh-token"
+}
+
+Success (200):
+{
+	"accessToken": "mock-ata-access-token-refreshed",
+	"refreshToken": "mock-ata-refresh-token-refreshed",
+	"expireAt": 1777803600
+}
+
+
+3) POST /api/authenticator/logout
+Description:
+- Mock ATA logout.
+
+Request body:
+- none
+
+Success (200):
+{}
+
+
+4) POST /api/Airport/search
+Description:
+- Search mock airports by airport name, IATA code, city, or country.
+
+Request body:
+{
+	"search": "Mogadishu"
+}
+
+Success (200):
+[
+	{
+		"id": 1,
+		"name": "Aden Abdulle International Airport",
+		"code": "MGQ",
+		"countryId": 1,
+		"cityId": 1,
+		"country": "Somalia",
+		"city": "Mogadishu",
+		"latitude": "2.0144",
+		"longitude": "45.3047",
+		"isActive": true,
+		"createdDate": "2024-01-01T00:00:00",
+		"modifiedDate": null
+	}
+]
+
+
+5) GET /api/Airport/code/:code
+Description:
+- Get one airport by IATA code.
+
+Example:
+/api/Airport/code/MGQ
+
+Success (200):
+{
+	"id": 1,
+	"name": "Aden Abdulle International Airport",
+	"code": "MGQ",
+	"countryId": 1,
+	"cityId": 1,
+	"country": "Somalia",
+	"city": "Mogadishu",
+	"latitude": "2.0144",
+	"longitude": "45.3047",
+	"isActive": true,
+	"createdDate": "2024-01-01T00:00:00",
+	"modifiedDate": null
+}
+
+Common errors:
+- 404: Airport not found
+
+
+6) GET /api/Airport
+Description:
+- Get all mock airports.
+
+Success (200):
+[
+	{
+		"id": 1,
+		"name": "Aden Abdulle International Airport",
+		"code": "MGQ",
+		"country": "Somalia",
+		"city": "Mogadishu",
+		"isActive": true
+	}
+]
+
+
+7) GET /api/Country
+Description:
+- Get mock country list.
+
+Success (200):
+[
+	{
+		"id": 1,
+		"name": "Somalia",
+		"code": "SO"
+	}
+]
+
+
+8) GET /api/Airline
+Description:
+- Get mock airline list.
+
+Success (200):
+[
+	{
+		"id": 1,
+		"name": "Jubba Airways",
+		"code": "3J"
+	}
+]
+
+
+9) GET /api/FlightBooking/paymentOptions/microSiteClientId/:microSiteClientId
+Description:
+- Get payment methods for a microsite.
+
+Example:
+/api/FlightBooking/paymentOptions/microSiteClientId/2
+
+Success (200):
+[
+	{ "id": 1, "name": "TaajPay" },
+	{ "id": 2, "name": "Deposit" },
+	{ "id": 5, "name": "iPayAfrica" }
+]
+
+
+10) POST /api/FlightQuote/search
+Description:
+- Search available mock flights.
+- Save response.id as searchId and selected flights[].id as flightId for booking.
+
+Request body:
+{
+	"tripType": "OneWay",
+	"departureCity": "MGQ",
+	"arrivalCity": "NBO",
+	"departureDate": "2026-04-07",
+	"returnDate": null,
+	"adults": 1,
+	"children": 0,
+	"childrenAges": [],
+	"infants": 0,
+	"infantsAges": [],
+	"cabinClass": "Economy",
+	"isFlexibleDates": true,
+	"isDirectFlight": true,
+	"micrositeClientId": 2,
+	"provider": null
+}
+
+Success (200):
+{
+	"id": 5678,
+	"tripType": "OneWay",
+	"departureCity": "MGQ",
+	"arrivalCity": "NBO",
+	"departureDate": "2026-04-07T00:00:00",
+	"returnDate": null,
+	"adults": 1,
+	"children": 0,
+	"infants": 0,
+	"cabinClass": "Economy",
+	"isFlexibleDates": true,
+	"isDirectFlight": true,
+	"flights": [
+		{
+			"id": 101,
+			"totalAmount": 285,
+			"taxesAmount": 34.2,
+			"ticketAmount": 250.8,
+			"agencyMarkup": 0,
+			"microSiteMarkup": 0,
+			"afroMarkup": 0,
+			"currency": "USD",
+			"provider": "Siliconsom",
+			"fareType": "Economy",
+			"outBound": {
+				"departure": "MGQ",
+				"arrival": "NBO",
+				"departureAirport": "Aden Abdulle International Airport",
+				"arrivalAirport": "Jomo Kenyatta International Airport",
+				"departureDateTime": "2026-04-07T06:00:00",
+				"arrivalDateTime": "2026-04-07T08:30:00",
+				"departureDate": "2026-04-07",
+				"departureTime": "06:00",
+				"arrivalDate": "2026-04-07",
+				"arrivalTime": "08:30",
+				"duration": 150,
+				"baggageAllowance": "23kg",
+				"companyCode": "3J",
+				"segments": [
+					{
+						"departure": "MGQ",
+						"arrival": "NBO",
+						"airline": "3J",
+						"airlineName": "Jubba Airways",
+						"flightNumber": "3J101",
+						"duration": "2h 30m",
+						"cabinType": "Economy",
+						"fareType": "Economy"
+					}
+				],
+				"fareRules": []
+			},
+			"inBound": null
+		}
+	]
+}
+
+Common errors:
+- 400: tripType/departureCity/arrivalCity/departureDate is required
+- 400: returnDate is required for RoundTrip
+
+
+11) POST /api/FlightBooking/addBooking
+Description:
+- Create a mock flight booking.
+- paymentTypeId 5 returns type "RedirectUrl"; other payment types return "DirectBooking".
+- The mock also accepts sample searchId 5678 and flightId 101 directly for Postman testing.
+
+Request body:
+{
+	"flightSelection": [
+		{
+			"searchId": 5678,
+			"flightId": 101
+		}
+	],
+	"paymentTypeId": 5,
+	"paymentParams": null,
+	"microSiteClientId": 2,
+	"passengers": [
+		{
+			"type": "Adult",
+			"title": "Mr",
+			"firstName": "Ahmed",
+			"lastName": "Mohamed",
+			"requestedAge": 30,
+			"birthDate": "1996-03-15",
+			"documentType": "Passport",
+			"documentNumber": "P12345678",
+			"documentExpiration": "2030-12-31",
+			"courtesyTitle": "Mr",
+			"email": "ahmed@example.com",
+			"phoneCountryCode": "+252",
+			"phone": "611777111",
+			"country": "Somalia",
+			"countryId": 1
+		}
+	]
+}
+
+Success (200):
+{
+	"type": "RedirectUrl",
+	"redirectUrl": "https://mock-pay.atasomalia.com/pay/ATAS-2026-0001",
+	"ticketAmount": 250.8,
+	"taxAmount": 34.2,
+	"agencyMarkup": 0,
+	"microSiteMarkup": 0,
+	"afroMarkup": 0,
+	"totalAmount": 285,
+	"currency": "USD",
+	"parentPnr": "ATAS-2026-0001",
+	"status": "Pending",
+	"flights": [
+		{
+			"ticketAmount": 250.8,
+			"taxAmount": 34.2,
+			"totalAmount": 285,
+			"currency": "USD",
+			"pnr": "ATA100",
+			"bookingReference": "REF-100",
+			"outBound": {},
+			"inBound": null,
+			"passengers": [
+				{
+					"type": "Adult",
+					"title": "Mr",
+					"firstName": "Ahmed",
+					"lastName": "Mohamed",
+					"email": "ahmed@example.com",
+					"phone": "611777111",
+					"documentType": "Passport",
+					"documentNumber": "P12345678"
+				}
+			]
+		}
+	],
+	"passengers": []
+}
+
+Common errors:
+- 400: flightSelection is required
+- 400: passengers is required
+- 404: Selected flight not found. Search flights before booking.
+
+
+12) POST /api/payment/generate/iPayAfrica
+Description:
+- Generate a mock iPayAfrica payment URL.
+
+Request body:
+{
+	"orderId": "ATAS-2026-0001",
+	"reservationId": "REF-100",
+	"amount": 285,
+	"phoneNumber": "+252611777111",
+	"email": "ahmed@example.com",
+	"callbackUrl": "https://habsantech.com/booking-confirmation",
+	"additionalInfo": "Flight booking MGQ-NBO",
+	"currency": "USD",
+	"paymentDescription": "Flight booking",
+	"referenceId": "ATAS-2026-0001",
+	"micrositeId": 2
+}
+
+Success (200):
+{
+	"paymentUrl": "https://mock-pay.atasomalia.com/ipayafrica/ATAS-2026-0001",
+	"orderId": "ATAS-2026-0001",
+	"reservationId": "REF-100",
+	"amount": 285,
+	"currency": "USD",
+	"status": "Pending",
+	"provider": "iPayAfrica"
+}
+
+
+13) POST /api/payment/process
+Description:
+- Confirm a mock payment and update the booking to Confirmed.
+
+Request body:
+{
+	"parentPnr": "ATAS-2026-0001",
+	"transactionId": "TXN-iPayAfrica-12345",
+	"module": "Flight",
+	"status": "SUCCESS",
+	"amount": 285
+}
+
+Success (200):
+{
+	"ticketAmount": 250.8,
+	"taxAmount": 34.2,
+	"totalAmount": 285,
+	"currency": "USD",
+	"pnr": "ATA100",
+	"bookingReference": "REF-100",
+	"parentPnr": "ATAS-2026-0001",
+	"status": "Confirmed",
+	"paymentStatus": "PaymentComplete",
+	"bookingDate": "2026-05-03T18:30:00",
+	"agency": "ATA Somalia",
+	"agencyId": 2,
+	"createdBy": "ahmed@example.com",
+	"flights": []
+}
+
+Common errors:
+- 404: Booking not found
+
+
+14) GET /api/FlightBooking/parentPnr/:parentPnr
+Description:
+- Get full mock booking details by parent PNR.
+
+Example:
+/api/FlightBooking/parentPnr/ATAS-2026-0001
+
+Success (200):
+{
+	"ticketAmount": 250.8,
+	"taxAmount": 34.2,
+	"totalAmount": 285,
+	"currency": "USD",
+	"pnr": "ATA100",
+	"bookingReference": "REF-100",
+	"parentPnr": "ATAS-2026-0001",
+	"status": "Confirmed",
+	"paymentStatus": "PaymentComplete",
+	"bookingDate": "2026-05-03T18:30:00",
+	"agency": "ATA Somalia",
+	"agencyId": 2,
+	"createdBy": "ahmed@example.com",
+	"flights": [
+		{
+			"ticketAmount": 250.8,
+			"taxAmount": 34.2,
+			"totalAmount": 285,
+			"currency": "USD",
+			"pnr": "ATA100",
+			"bookingReference": "REF-100",
+			"outBound": {},
+			"inBound": null,
+			"passengers": []
+		}
+	]
+}
+
+Common errors:
+- 404: Booking not found
+
+
+15) GET /api/FlightBooking/parentPnr/:parentPnr/email/:email
+Description:
+- Mock resend ticket email.
+
+Example:
+/api/FlightBooking/parentPnr/ATAS-2026-0001/email/ahmed@example.com
+
+Success (200):
+{
+	"message": "Ticket confirmation email sent",
+	"parentPnr": "ATAS-2026-0001",
+	"email": "ahmed@example.com"
+}
+
+Common errors:
+- 404: Booking not found
+
+
+16) POST /api/FlightBooking/myBookings?PageSize=10&PageNumber=1
+Description:
+- Get paginated mock booking summaries.
+
+Request body:
+{
+	"startDate": "2026-01-01",
+	"endDate": "2026-12-31",
+	"microSiteClientId": 2,
+	"filters": [],
+	"unPaged": false,
+	"sortColumn": "",
+	"sortDirection": "",
+	"keyword": ""
+}
+
+Success (200):
+[
+	{
+		"id": 100,
+		"ticketAmount": 250.8,
+		"taxAmount": 34.2,
+		"totalAmount": 285,
+		"currency": "USD",
+		"parentPnr": "ATAS-2026-0001",
+		"flightPnr": "ATA100",
+		"bookingReference": "REF-100",
+		"status": "Confirmed",
+		"paymentStatus": "PaymentComplete",
+		"departure": "MGQ",
+		"arrival": "NBO",
+		"departureDateTime": "2026-04-07T06:00:00",
+		"arrivalDateTime": "2026-04-07T08:30:00",
+		"tripType": "OneWay",
+		"bookingDate": "2026-05-03T18:30:00",
+		"bookingId": 100,
+		"airlineName": "Jubba Airways",
+		"agency": "ATA Somalia",
+		"class": "Economy",
+		"passenger": ["Ahmed Mohamed"],
+		"passengerCount": 1,
+		"passengerPhone": "+252611777111",
+		"passengerPassport": "P12345678",
+		"createdBy": "ahmed@example.com"
+	}
+]
+
+
+17) GET /api/FlightBooking/:flightBookingId/history
+Description:
+- Get mock booking activity history.
+
+Example:
+/api/FlightBooking/100/history
+
+Success (200):
+[
+	{
+		"id": 1,
+		"flightBookingId": 100,
+		"description": "Booking created",
+		"createdAt": "2026-05-03T18:30:00",
+		"createdBy": "ahmed@example.com"
+	},
+	{
+		"id": 2,
+		"flightBookingId": 100,
+		"description": "Payment PaymentComplete via TXN-iPayAfrica-12345",
+		"createdAt": "2026-05-03T18:35:00",
+		"createdBy": "system"
+	}
+]
+
+Common errors:
+- 404: Booking not found
+
+
+18) GET /api/FlightBooking/parentPnr/:parentPnr/fareRules
+Description:
+- Get mock fare rules for a booking.
+
+Example:
+/api/FlightBooking/parentPnr/ATAS-2026-0001/fareRules
+
+Success (200):
+[
+	{
+		"title": "Change policy",
+		"description": "Date changes are allowed up to 24 hours before departure with fare difference.",
+		"penaltyAmount": 25,
+		"currency": "USD"
+	},
+	{
+		"title": "Cancellation policy",
+		"description": "Refundable before departure with airline cancellation penalty.",
+		"penaltyAmount": 50,
+		"currency": "USD"
+	}
+]
+
+Common errors:
+- 404: Booking not found
+
+
+19) POST /api/Cancellation/client/requestCancellation
+Description:
+- Request mock flight cancellation.
+
+Request body:
+{
+	"reason": "Change of travel plans",
+	"bookingId": 100,
+	"module": "Flight"
+}
+
+Success (200):
+{
+	"id": 900,
+	"reason": "Change of travel plans",
+	"bookingId": 100,
+	"module": "Flight",
+	"status": "PenaltyOffered",
+	"penaltyAmount": 50,
+	"currency": "USD",
+	"createdAt": "2026-05-03T18:40:00"
+}
+
+
+20) PUT /api/Cancellation/client/acceptPenalty/:requestId
+Description:
+- Accept mock cancellation penalty.
+
+Example:
+/api/Cancellation/client/acceptPenalty/900
+
+Success (200):
+{
+	"id": 900,
+	"reason": "Change of travel plans",
+	"bookingId": 100,
+	"module": "Flight",
+	"status": "Accepted",
+	"penaltyAmount": 50,
+	"currency": "USD",
+	"createdAt": "2026-05-03T18:40:00"
+}
+
+Common errors:
+- 404: Cancellation request not found
+
+
+21) PUT /api/Cancellation/client/rejectPenalty/:requestId
+Description:
+- Reject mock cancellation penalty.
+
+Example:
+/api/Cancellation/client/rejectPenalty/900
+
+Success (200):
+{
+	"id": 900,
+	"reason": "Change of travel plans",
+	"bookingId": 100,
+	"module": "Flight",
+	"status": "Rejected",
+	"penaltyAmount": 50,
+	"currency": "USD",
+	"createdAt": "2026-05-03T18:40:00"
+}
+
+Common errors:
+- 404: Cancellation request not found
+
+
+22) GET /api/Cancellation/client/getMyCancellation/module/:module?PageSize=10&PageNumber=1
+Description:
+- Get mock cancellation requests by module.
+
+Example:
+/api/Cancellation/client/getMyCancellation/module/Flight?PageSize=10&PageNumber=1
+
+Success (200):
+[
+	{
+		"id": 900,
+		"reason": "Change of travel plans",
+		"bookingId": 100,
+		"module": "Flight",
+		"status": "Accepted",
+		"penaltyAmount": 50,
+		"currency": "USD",
+		"createdAt": "2026-05-03T18:40:00"
+	}
+]

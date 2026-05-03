@@ -20,6 +20,7 @@ import ExperiencePanelRoutes from "./Exprience/routes/expriences.js";
 import StayPanelRoutes from "./Stay/routes/stay.js";
 import TransportPanelRoutes from "./Transport/routes/transport.js";
 import UserRoutes from "./users/routes/user.js";
+import FlightRoutes from "./flights/routes/flights.js";
 
 function parallel(middlewares) {
   return (req, res, next) => {
@@ -105,5 +106,6 @@ export default function () {
   ExperiencePanelRoutes(app);
   StayPanelRoutes(app);
   UserRoutes(app);
+  FlightRoutes(app);
   return app;
 }
