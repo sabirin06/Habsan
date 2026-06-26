@@ -3,6 +3,7 @@ import Property from "../../configs/models/models/property.js";
 
 export const search_stays = async (req, res) => {
   try {
+    console.log("search_stays called with body:", req.body);
     const body = req.body || {};
     const page_raw = Number(body.page || 1);
     const limit_raw = Number(body.limit || 18);
