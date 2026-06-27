@@ -40,6 +40,7 @@ export const create_first_admin = async (req, res) => {
 const getAuthCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
   const cookieDomain = process.env.AUTH_COOKIE_DOMAIN?.trim();
+  console.log("AUTH_COOKIE_DOMAIN:", cookieDomain);
 
   const options = {
     httpOnly: true,
